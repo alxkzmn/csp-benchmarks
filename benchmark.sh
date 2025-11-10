@@ -5,7 +5,6 @@ set -euo pipefail
 # Usage: benchmark.sh --system-dir <path> [--targets "sha256,poseidon,..."]
 
 SYSTEM_DIR=""
-RUNS=10
 TARGETS=("sha256" "ecdsa")
 
 while [[ $# -gt 0 ]]; do
@@ -14,12 +13,24 @@ while [[ $# -gt 0 ]]; do
       SYSTEM_DIR="$2"; shift 2 ;;
     --targets)
       IFS=',' read -r -a TARGETS <<< "$2"; shift 2 ;;
+    --logging)
+      LOGGING_RUN=true; shift ;;
+    --quick)
+      QUICK_RUN=true; shift ;;
+    --no-ram)
+      NO_RAM=true; shift ;;
     *)
       echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
 
-if [[ -z "$SYSTEM_DIR" ]]; then
+if [[ -z "${QUICK_RUN:-}" ]]; then
+  RUNS=10
+else
+  RUNS=1
+fi
+
+if [[ -z "${SYSTEM_DIR:-}" ]]; then
   echo "--system-dir is required (path containing prepare.sh, prove.sh, verify.sh)" >&2
   exit 2
 fi
@@ -33,6 +44,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 UTILS_BIN="${SCRIPT_DIR}/target/release/utils"
 MEASURE_RAM_SCRIPT="${SCRIPT_DIR}/measure_mem_avg.sh"
 BENCH_PROPS_JSON="${SYSTEM_DIR}/bench_props.json"
+NUM_CONSTRAINTS="${SYSTEM_DIR}/circuit_sizes.json"
 
 if [[ ! -f "$BENCH_PROPS_JSON" ]]; then
   echo "bench_props.json not found: $BENCH_PROPS_JSON" >&2
@@ -73,11 +85,17 @@ for target in "${TARGETS[@]}"; do
   for (( i=0; i<sizes_len; i++ )); do
     INPUT_SIZE="$($UTILS_BIN sizes get --target "$TARGET" --index "$i")"
 
-    PROVER_JSON_FILE="$STATE_DIR/prover_${INPUT_SIZE}.json"
-    VERIFIER_JSON_FILE="$STATE_DIR/verifier_${INPUT_SIZE}.json"
+    PROVER_JSON_FILE="$STATE_DIR/prover_${TARGET}_${INPUT_SIZE}.json"
+    VERIFIER_JSON_FILE="$STATE_DIR/verifier_${TARGET}_${INPUT_SIZE}.json"
 
     step "[$TARGET] Prover (size ${INPUT_SIZE}):"
-    hyperfine --runs "$RUNS" \
+    if [[ -z "${LOGGING_RUN:-}" ]]; then
+    SHOW_OUTPUT=""
+    else
+    SHOW_OUTPUT="--show-output"
+    fi
+
+    hyperfine $SHOW_OUTPUT --runs "$RUNS" \
       --prepare "UTILS_BIN=$UTILS_BIN INPUT_SIZE=$INPUT_SIZE STATE_JSON=$PROVER_JSON_FILE bash $PREPARE_SH" \
       "STATE_JSON=$PROVER_JSON_FILE bash $PROVE_SH" \
       --export-json "$SYSTEM_DIR/hyperfine_${TARGET}_${INPUT_SIZE}_prover_metrics.json"
@@ -95,10 +113,12 @@ for target in "${TARGETS[@]}"; do
         --export-json "$SYSTEM_DIR/hyperfine_${TARGET}_${INPUT_SIZE}_verifier_metrics.json"
     fi
 
-    step "[$TARGET] RAM measurement (size ${INPUT_SIZE})"
-    MEM_JSON="$SYSTEM_DIR/${TARGET}_${INPUT_SIZE}_mem_report.json"
-    bash "$MEASURE_RAM_SCRIPT" -o "$MEM_JSON" -- bash -lc "STATE_JSON=\"$PROVER_JSON_FILE\" bash \"$PROVE_SH\"" || warn "Memory measurement failed"
-    ok "Memory report: $MEM_JSON"
+    if [[ -z "${NO_RAM:-}" ]]; then
+      step "[$TARGET] RAM measurement (size ${INPUT_SIZE})"
+      MEM_JSON="$SYSTEM_DIR/${TARGET}_${INPUT_SIZE}_mem_report.json"
+      bash "$MEASURE_RAM_SCRIPT" -o "$MEM_JSON" -- bash -lc "STATE_JSON=\"$PROVER_JSON_FILE\" bash \"$PROVE_SH\"" || warn "Memory measurement failed"
+      ok "Memory report: $MEM_JSON"
+    fi
 
     step "[$TARGET] Size measurement (size ${INPUT_SIZE})"
     SIZES_JSON="$SYSTEM_DIR/${TARGET}_${INPUT_SIZE}_sizes.json"
@@ -116,9 +136,14 @@ if [[ ! -x "$FORMATTER_BIN" ]]; then
   (cd "$SCRIPT_DIR" && cargo build --release -p utils --bin format_hyperfine >/dev/null 2>&1) || warn "Failed to build format_hyperfine"
 fi
 
+if [[ ! -f "$NUM_CONSTRAINTS" ]]; then
+  echo "circuit_sizes.json not found: $NUM_CONSTRAINTS" >&2
+  exit 1
+fi
+
 if [[ -x "$FORMATTER_BIN" ]]; then
   step "Formatting hyperfine outputs into Metrics JSON"
-  "$FORMATTER_BIN" --system-dir "$SYSTEM_DIR" --properties "$BENCH_PROPS_JSON" || warn "format_hyperfine failed"
+  "$FORMATTER_BIN" --system-dir "$SYSTEM_DIR" --properties "$BENCH_PROPS_JSON" --num-constraints-file "$NUM_CONSTRAINTS" || warn "format_hyperfine failed"
 else
   warn "format_hyperfine binary not found; skipping formatting"
 fi
