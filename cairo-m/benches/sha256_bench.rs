@@ -16,6 +16,7 @@ utils::define_benchmark_harness!(
         Some("Circle FRI"), // https://eprint.iacr.org/2024/278.pdf
         "AIR",
         false,
+        true,                    // zkVM
         96, // https://github.com/kkrt-labs/cairo-m/blob/main/crates/prover/src/prover_config.rs#L13-L20
         true, // hash-based PCS
         true, // https://github.com/kkrt-labs
