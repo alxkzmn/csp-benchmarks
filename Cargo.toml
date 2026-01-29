@@ -2,6 +2,7 @@
 resolver = "3"
 members = [
     "binius64",
+    "hyperplonk",
     "plonky2",
     "openvm",
     "provekit",
@@ -17,6 +18,10 @@ exclude = [
     "cairo-m",
     "nexus"
 ]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
 
 [workspace.dependencies]
 anyhow = "1.0.81"
@@ -44,3 +49,23 @@ ark-ec = { git = "https://github.com/a16z/arkworks-algebra", branch = "dev/twist
 ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", branch = "dev/twist-shout" }
 ark-bn254 = { git = "https://github.com/a16z/arkworks-algebra", branch = "dev/twist-shout" }
 allocative = { git = "https://github.com/facebookexperimental/allocative", rev = "85b773d85d526d068ce94724ff7a7b81203fc95e" }
+
+[patch."https://github.com/Plonky3/Plonky3"]
+p3-air = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-challenger = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-commit = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-dft = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-field = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-interpolation = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-keccak = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-keccak-air = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-koala-bear = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-matrix = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-maybe-rayon = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-mds = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-merkle-tree = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-monty-31 = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-multilinear-util = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-poseidon2 = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-symmetric = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
+p3-util = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }

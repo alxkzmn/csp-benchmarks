@@ -46,6 +46,7 @@ impl FromStr for BenchTarget {
 #[derive(Clone, Copy, Debug)]
 pub enum ProvingSystem {
     Binius64,
+    HyperPlonk,
     Expander,
     Plonky2,
     OpenVM,
@@ -64,6 +65,7 @@ impl ProvingSystem {
     pub fn as_str(&self) -> &'static str {
         match self {
             ProvingSystem::Binius64 => "binius64",
+            ProvingSystem::HyperPlonk => "hyperplonk",
             ProvingSystem::Expander => "expander",
             ProvingSystem::Plonky2 => "plonky2",
             ProvingSystem::OpenVM => "openvm",
