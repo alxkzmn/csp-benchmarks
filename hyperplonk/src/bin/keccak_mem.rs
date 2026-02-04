@@ -15,4 +15,3 @@ fn main() {
     let prepared = hyperplonk::prepare_keccak(args.input_size).expect("prepare failed");
     let _ = hyperplonk::prove_keccak(&prepared);
 }
-

@@ -44,4 +44,3 @@ pub fn preprocessing_size(prepared: &PreparedKeccak) -> usize {
 pub fn proof_size(proof: &KeccakProof) -> usize {
     keccak::proof_size(proof)
 }
-

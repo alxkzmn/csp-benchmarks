@@ -47,6 +47,7 @@ impl FromStr for BenchTarget {
 pub enum ProvingSystem {
     Binius64,
     HyperPlonk,
+    Whirlaway,
     Expander,
     Plonky2,
     OpenVM,
@@ -66,6 +67,7 @@ impl ProvingSystem {
         match self {
             ProvingSystem::Binius64 => "binius64",
             ProvingSystem::HyperPlonk => "hyperplonk",
+            ProvingSystem::Whirlaway => "whirlaway",
             ProvingSystem::Expander => "expander",
             ProvingSystem::Plonky2 => "plonky2",
             ProvingSystem::OpenVM => "openvm",

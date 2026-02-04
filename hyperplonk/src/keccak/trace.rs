@@ -69,7 +69,7 @@ pub fn generate_trace_and_public_digest_limbs<F: PrimeField64>(
 
     // Sponge simulation: absorb padded blocks, record permutation inputs, record outputs.
     let padded = keccak_pad10star1(msg);
-    if padded.len() % RATE_BYTES != 0 {
+    if !padded.len().is_multiple_of(RATE_BYTES) {
         anyhow::bail!("padding produced non-multiple of rate");
     }
     let num_blocks = padded.len() / RATE_BYTES;
@@ -86,9 +86,7 @@ pub fn generate_trace_and_public_digest_limbs<F: PrimeField64>(
 
         // Interpret block as 17 u64 lanes, little-endian per lane.
         for lane in 0..(RATE_BYTES / 8) {
-            let chunk: [u8; 8] = block[lane * 8..(lane + 1) * 8]
-                .try_into()
-                .unwrap();
+            let chunk: [u8; 8] = block[lane * 8..(lane + 1) * 8].try_into().unwrap();
             let w = u64::from_le_bytes(chunk);
             state[lane] ^= w;
         }
@@ -103,7 +101,8 @@ pub fn generate_trace_and_public_digest_limbs<F: PrimeField64>(
     // Sanity: sponge output digest matches utils' digest.
     let mut computed_digest = [0u8; 32];
     for i in 0..4 {
-        computed_digest[i * 8..(i + 1) * 8].copy_from_slice(&perm_outputs.last().unwrap()[i].to_le_bytes());
+        computed_digest[i * 8..(i + 1) * 8]
+            .copy_from_slice(&perm_outputs.last().unwrap()[i].to_le_bytes());
     }
     if computed_digest != digest {
         anyhow::bail!("keccak sponge simulation digest mismatch");
@@ -111,17 +110,14 @@ pub fn generate_trace_and_public_digest_limbs<F: PrimeField64>(
 
     // Use upstream KeccakAir trace generation for the permutation part.
     // It will pad to a power-of-two number of rows, possibly adding extra (zero) permutations/rounds.
-    let keccak_trace =
-        p3_keccak_air::generate_trace_rows::<F>(perm_inputs.clone(), 0);
+    let keccak_trace = p3_keccak_air::generate_trace_rows::<F>(perm_inputs.clone(), 0);
     let height = keccak_trace.height();
     let width = NUM_KECCAK_COLS + (1 + 1 + 1 + RATE_BITS + STATE_BITS);
 
     // Allocate full trace and copy permutation columns.
     let mut values = vec![F::ZERO; height * width];
     for r in 0..height {
-        let src = keccak_trace
-            .row_slice(r)
-            .context("row_slice failed")?;
+        let src = keccak_trace.row_slice(r).context("row_slice failed")?;
         let dst = &mut values[r * width..r * width + NUM_KECCAK_COLS];
         dst.copy_from_slice(&src);
     }
@@ -148,7 +144,11 @@ pub fn generate_trace_and_public_digest_limbs<F: PrimeField64>(
         // - rows >  hash_end_row: seen_end = 1
         let seen_end = if r <= hash_end_row { F::ZERO } else { F::ONE };
         set(r, SEEN_END_IDX, seen_end);
-        set(r, HASH_END_IDX, if r == hash_end_row { F::ONE } else { F::ZERO });
+        set(
+            r,
+            HASH_END_IDX,
+            if r == hash_end_row { F::ONE } else { F::ZERO },
+        );
     }
 
     // Block bits: constant across each full permutation; zero for padding beyond real blocks.
@@ -156,8 +156,12 @@ pub fn generate_trace_and_public_digest_limbs<F: PrimeField64>(
         let start_row = perm_idx * NUM_ROUNDS;
         let end_row = ((perm_idx + 1) * NUM_ROUNDS).min(height);
         for r in start_row..end_row {
-            for i in 0..RATE_BITS {
-                set(r, BLOCK_BITS_START + i, if bits[i] == 1 { F::ONE } else { F::ZERO });
+            for (i, b) in bits.iter().take(RATE_BITS).enumerate() {
+                set(
+                    r,
+                    BLOCK_BITS_START + i,
+                    if *b == 1 { F::ONE } else { F::ZERO },
+                );
             }
         }
     }
@@ -169,8 +173,12 @@ pub fn generate_trace_and_public_digest_limbs<F: PrimeField64>(
             break;
         }
         let bits = state_to_bits_le(out_state);
-        for i in 0..STATE_BITS {
-            set(final_row, OUT_BITS_START + i, if bits[i] == 1 { F::ONE } else { F::ZERO });
+        for (i, b) in bits.iter().take(STATE_BITS).enumerate() {
+            set(
+                final_row,
+                OUT_BITS_START + i,
+                if *b == 1 { F::ONE } else { F::ZERO },
+            );
         }
     }
 
@@ -179,4 +187,3 @@ pub fn generate_trace_and_public_digest_limbs<F: PrimeField64>(
 
     Ok((RowMajorMatrix::new(values, width), digest_limbs))
 }
-

@@ -1,0 +1,22 @@
+[package]
+name = "whirlaway"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+criterion = { workspace = true }
+utils = { workspace = true }
+
+whirlaway_sys = { package = "whirlaway", git = "https://github.com/alxkzmn/Whirlaway", rev ="8932dcd" }
+
+[[bench]]
+name = "keccak"
+harness = false
+
+[[bin]]
+name = "keccak_mem_whirlaway"
+path = "src/bin/keccak_mem.rs"

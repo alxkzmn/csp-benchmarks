@@ -4,6 +4,7 @@ members = [
     "binius64",
     "hyperplonk",
     "plonky2",
+    "whirlaway",
     "openvm",
     "provekit",
     "polyhedra-expander",
@@ -16,7 +17,7 @@ members = [
 ]
 exclude = [
     "cairo-m",
-    "nexus"
+    "nexus",
 ]
 
 [workspace.package]

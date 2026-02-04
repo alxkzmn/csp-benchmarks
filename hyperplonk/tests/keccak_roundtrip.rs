@@ -4,4 +4,3 @@ fn keccak_roundtrip_128() {
     let proof = hyperplonk::prove_keccak(&prepared);
     hyperplonk::verify_keccak(&prepared, &proof).expect("verify failed");
 }
-

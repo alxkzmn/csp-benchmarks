@@ -6,7 +6,9 @@ use p3_challenger::{HashChallenger, SerializingChallenger32};
 use p3_dft::Radix2DitParallel;
 use p3_field::extension::BinomialExtensionField;
 use p3_hyperplonk::HyperPlonkConfig;
-use p3_hyperplonk::{ProverInput, VerifierInput, keygen, prove as hyperprove, verify as hyperverify};
+use p3_hyperplonk::{
+    ProverInput, VerifierInput, keygen, prove as hyperprove, verify as hyperverify,
+};
 use p3_keccak::Keccak256Hash;
 use p3_koala_bear::KoalaBear;
 use p3_matrix::dense::RowMajorMatrix;
@@ -100,8 +102,10 @@ pub fn prove(prepared: &PreparedKeccak) -> KeccakProof {
 }
 
 pub fn verify(prepared: &PreparedKeccak, proof: &KeccakProof) -> Result<()> {
-    let verifier_inputs =
-        vec![VerifierInput::new(prepared.air.clone(), prepared.public_values.clone())];
+    let verifier_inputs = vec![VerifierInput::new(
+        prepared.air.clone(),
+        prepared.public_values.clone(),
+    )];
     hyperverify(&prepared.config, &prepared.vk, verifier_inputs, proof)
         .map_err(|e| anyhow::anyhow!("hyperplonk verification failed: {e:?}"))
 }
@@ -132,4 +136,3 @@ pub fn num_constraints(prepared: &PreparedKeccak) -> usize {
         .map(|m| m.constraint_count)
         .unwrap_or(0)
 }
-
