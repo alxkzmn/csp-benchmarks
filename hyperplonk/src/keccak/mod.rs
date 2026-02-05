@@ -11,7 +11,6 @@ use p3_hyperplonk::{
 };
 use p3_keccak::Keccak256Hash;
 use p3_koala_bear::KoalaBear;
-use p3_matrix::dense::RowMajorMatrix;
 use p3_whir::{
     FoldingFactor, InitialPhaseConfig, KeccakNodeCompress, KeccakU32BeLeafHasher,
     ProtocolParameters, SecurityAssumption, WhirPcs,
@@ -37,8 +36,6 @@ pub struct PreparedKeccak {
     pub air: KeccakSpongeAir,
     pub pk: p3_hyperplonk::ProvingKey,
     pub vk: p3_hyperplonk::VerifyingKey,
-    pub trace: RowMajorMatrix<Val>,
-    pub public_values: Vec<Val>,
 }
 
 fn make_config() -> HyperConfig {
@@ -67,16 +64,8 @@ fn make_config() -> HyperConfig {
 }
 
 pub fn prepare(input_size: usize) -> Result<PreparedKeccak> {
-    // Build AIR + trace + public digest.
-    let (trace, digest_limbs) = trace::generate_trace_and_public_digest_limbs::<Val>(input_size)
-        .context("failed to build keccak sponge trace")?;
-
     let air = KeccakSpongeAir::new();
     // Public values are 16 16-bit limbs (little-endian) of the Keccak256 digest.
-    let public_values: Vec<Val> = digest_limbs
-        .into_iter()
-        .map(|x| Val::new(x as u32))
-        .collect();
 
     let config = make_config();
     let (vk, pk) = keygen::<Val, _>([&air]);
@@ -87,41 +76,40 @@ pub fn prepare(input_size: usize) -> Result<PreparedKeccak> {
         air,
         pk,
         vk,
-        trace,
-        public_values,
     })
 }
 
-pub fn prove(prepared: &PreparedKeccak) -> KeccakProof {
+pub fn prove(prepared: &PreparedKeccak) -> Result<(Vec<Val>, KeccakProof)> {
+    // Build AIR + trace + public digest.
+    let (trace, digest_limbs) =
+        trace::generate_trace_and_public_digest_limbs::<Val>(prepared.input_size)
+            .context("failed to build keccak sponge trace")?;
+    let public_values: Vec<Val> = digest_limbs
+        .into_iter()
+        .map(|x| Val::new(x as u32))
+        .collect();
+
     let prover_inputs = vec![ProverInput::new(
         prepared.air.clone(),
-        prepared.public_values.clone(),
-        prepared.trace.clone(),
+        public_values.clone(),
+        trace,
     )];
-    hyperprove(&prepared.config, &prepared.pk, prover_inputs)
+    Ok((
+        public_values,
+        hyperprove(&prepared.config, &prepared.pk, prover_inputs),
+    ))
 }
 
-pub fn verify(prepared: &PreparedKeccak, proof: &KeccakProof) -> Result<()> {
-    let verifier_inputs = vec![VerifierInput::new(
-        prepared.air.clone(),
-        prepared.public_values.clone(),
-    )];
-    hyperverify(&prepared.config, &prepared.vk, verifier_inputs, proof)
+pub fn verify(prepared: &PreparedKeccak, proof: &(Vec<Val>, KeccakProof)) -> Result<()> {
+    let verifier_inputs = vec![VerifierInput::new(prepared.air.clone(), proof.0.clone())];
+    hyperverify(&prepared.config, &prepared.vk, verifier_inputs, &proof.1)
         .map_err(|e| anyhow::anyhow!("hyperplonk verification failed: {e:?}"))
 }
 
 pub fn preprocessing_size(prepared: &PreparedKeccak) -> usize {
-    // p3-playground's VK/PK don't currently implement serde, so we can't bincode them directly.
-    // For now we use a conservative proxy: sum of per-AIR metadata (small) + trace-independent.
-    prepared
-        .vk
-        .metas()
-        .iter()
-        .map(|m| {
-            // 10 usize fields in AirMeta on 64-bit is ~80 bytes, but keep it simple.
-            (m.width + m.public_value_count + m.constraint_count) * core::mem::size_of::<usize>()
-        })
-        .sum()
+    bincode::serialize(&prepared.pk)
+        .map(|v| v.len())
+        .unwrap_or(0)
 }
 
 pub fn proof_size(proof: &KeccakProof) -> usize {

@@ -8731,7 +8731,7 @@ dependencies = [
 [[package]]
 name = "p3-air-ext"
 version = "0.1.0"
-source = "git+https://github.com/alxkzmn/p3-playground?rev=9bd2b78#9bd2b78fa3c76fb400ba65b4e08a167fcf21e157"
+source = "git+https://github.com/alxkzmn/p3-playground?rev=23a6b57#23a6b5717424e565bfdb21278f31cf52370a2330"
 dependencies = [
  "itertools 0.14.0",
  "p3-air 0.4.1",
@@ -9065,7 +9065,7 @@ dependencies = [
 [[package]]
 name = "p3-hyperplonk"
 version = "0.1.0"
-source = "git+https://github.com/alxkzmn/p3-playground?rev=9bd2b78#9bd2b78fa3c76fb400ba65b4e08a167fcf21e157"
+source = "git+https://github.com/alxkzmn/p3-playground?rev=23a6b57#23a6b5717424e565bfdb21278f31cf52370a2330"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
@@ -9340,7 +9340,7 @@ dependencies = [
 [[package]]
 name = "p3-ml-pcs"
 version = "0.1.0"
-source = "git+https://github.com/alxkzmn/p3-playground?rev=9bd2b78#9bd2b78fa3c76fb400ba65b4e08a167fcf21e157"
+source = "git+https://github.com/alxkzmn/p3-playground?rev=23a6b57#23a6b5717424e565bfdb21278f31cf52370a2330"
 dependencies = [
  "itertools 0.14.0",
  "p3-field 0.4.1",
@@ -9602,7 +9602,7 @@ dependencies = [
 [[package]]
 name = "p3-whir"
 version = "0.1.0"
-source = "git+https://github.com/alxkzmn/p3-playground?rev=9bd2b78#9bd2b78fa3c76fb400ba65b4e08a167fcf21e157"
+source = "git+https://github.com/alxkzmn/p3-playground?rev=23a6b57#23a6b5717424e565bfdb21278f31cf52370a2330"
 dependencies = [
  "itertools 0.14.0",
  "p3-challenger 0.4.1",

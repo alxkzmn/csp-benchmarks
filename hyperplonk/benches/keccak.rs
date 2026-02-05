@@ -13,7 +13,7 @@ utils::define_benchmark_harness!(
     HYPERPLONK_BENCH_PROPERTIES,
     |input_size| prepare_keccak(input_size).expect("failed to prepare keccak sponge AIR"),
     hyperplonk::keccak::num_constraints,
-    prove_keccak,
+    |prepared| prove_keccak(prepared).expect("failed to generate keccak proof"),
     |prepared, proof| verify_keccak(prepared, proof).expect("verification failed"),
     preprocessing_size,
     proof_size
