@@ -175,7 +175,9 @@ def _configure_log_y_axis(
         )
         ax.yaxis.set_major_formatter(
             mticker.FuncFormatter(
-                lambda y, _pos, unit=metric.axis_unit: _format_binary_tick(float(y), unit)
+                lambda y, _pos, unit=metric.axis_unit: _format_binary_tick(
+                    float(y), unit
+                )
             )
         )
 
