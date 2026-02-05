@@ -32,7 +32,7 @@ import matplotlib.ticker as mticker  # noqa: E402
 class MetricSpec:
     key: str
     title: str
-    y_label: str
+    axis_unit: str
     convert: Callable[[int], float]
 
 
@@ -52,31 +52,31 @@ METRICS: Sequence[MetricSpec] = (
     MetricSpec(
         key="proof_duration",
         title="Proving time",
-        y_label="seconds",
+        axis_unit="seconds",
         convert=_ns_to_s,
     ),
     MetricSpec(
         key="verify_duration",
-        title="Verify time",
-        y_label="seconds",
+        title="Verification time",
+        axis_unit="seconds",
         convert=_ns_to_s,
     ),
     MetricSpec(
         key="peak_memory",
         title="Peak memory",
-        y_label="MiB",
+        axis_unit="MB",
         convert=_bytes_to_mib,
     ),
     MetricSpec(
         key="proof_size",
         title="Proof size",
-        y_label="KiB",
+        axis_unit="kB",
         convert=_bytes_to_kib,
     ),
     MetricSpec(
         key="preprocessing_size",
         title="Preprocessing size",
-        y_label="KiB",
+        axis_unit="kB",
         convert=_bytes_to_kib,
     ),
 )
@@ -110,7 +110,7 @@ def _format_binary_units_from_bytes(value_bytes: float) -> str:
     if not math.isfinite(value_bytes) or value_bytes <= 0.0:
         return ""
 
-    units = ("B", "KiB", "MiB", "GiB", "TiB")
+    units = ("B", "kB", "MB", "GB", "TB")
     unit_index = 0
     v = float(value_bytes)
     while v >= 1024.0 and unit_index < len(units) - 1:
@@ -125,9 +125,9 @@ def _format_binary_units_from_bytes(value_bytes: float) -> str:
 
 
 def _format_binary_tick(value_in_axis_units: float, axis_unit: str) -> str:
-    if axis_unit == "KiB":
+    if axis_unit == "kB":
         value_bytes = value_in_axis_units * 1024.0
-    elif axis_unit == "MiB":
+    elif axis_unit == "MB":
         value_bytes = value_in_axis_units * 1024.0 * 1024.0
     else:
         # Fallback: treat as already-bytes.
@@ -175,7 +175,7 @@ def _configure_log_y_axis(
         )
         ax.yaxis.set_major_formatter(
             mticker.FuncFormatter(
-                lambda y, _pos, unit=metric.y_label: _format_binary_tick(float(y), unit)
+                lambda y, _pos, unit=metric.axis_unit: _format_binary_tick(float(y), unit)
             )
         )
 
@@ -245,6 +245,7 @@ def _plot_metric(
     fig, ax = plt.subplots(figsize=(10, 6))
 
     plotted_values: List[float] = []
+    plotted_xs_set: set[int] = set()
 
     for series, values_by_input in sorted(
         series_to_values.items(), key=lambda kv: kv[0]
@@ -260,6 +261,7 @@ def _plot_metric(
             xs.append(input_size)
             ys.append(y)
             plotted_values.append(y)
+            plotted_xs_set.add(input_size)
 
         if not xs:
             continue
@@ -267,8 +269,18 @@ def _plot_metric(
         ax.plot(xs, ys, marker="o", linewidth=2, markersize=4, label=series)
 
     ax.set_title(f"{title_prefix} — {target} — {metric.title}")
-    ax.set_xlabel("input_size")
-    ax.set_ylabel(metric.y_label)
+    if title_prefix:
+        ax.set_title(f"{title_prefix} — {target} — {metric.title}")
+    else:
+        ax.set_title(f"{target} — {metric.title}")
+    ax.set_xlabel("Input Size, Bytes")
+    if plotted_xs_set:
+        xticks = sorted(plotted_xs_set)
+        ax.set_xticks(xticks)
+        ax.set_xticklabels([str(x) for x in xticks])
+
+    # No Y-axis label: units are embedded in tick labels.
+    ax.set_ylabel("")
     if log_y:
         if plotted_values:
             _configure_log_y_axis(ax, metric, min(plotted_values), max(plotted_values))
@@ -317,6 +329,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Use log scale on the Y axis (non-positive values are skipped).",
     )
+    parser.add_argument(
+        "--include-input-name",
+        action="store_true",
+        help="Include the input JSON filename (stem) in the plot title.",
+    )
 
     args = parser.parse_args(list(argv) if argv is not None else None)
 
@@ -333,7 +350,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     _ensure_out_dir(args.out)
 
     input_stem = args.input.stem
-    title_prefix = input_stem
+    title_prefix = input_stem if bool(args.include_input_name) else ""
 
     rows_by_target: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
     for r in rows:
