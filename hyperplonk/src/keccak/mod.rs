@@ -1,5 +1,12 @@
-mod sponge_air;
-mod trace;
+#[cfg(not(any(test, feature = "test-utils")))]
+pub(crate) mod sponge_air;
+#[cfg(any(test, feature = "test-utils"))]
+pub mod sponge_air;
+
+#[cfg(not(any(test, feature = "test-utils")))]
+pub(crate) mod trace;
+#[cfg(any(test, feature = "test-utils"))]
+pub mod trace;
 
 use anyhow::{Context, Result};
 use p3_challenger::{HashChallenger, SerializingChallenger32};

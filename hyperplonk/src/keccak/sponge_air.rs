@@ -7,21 +7,21 @@ use p3_matrix::Matrix;
 use p3_matrix::horizontally_truncated::HorizontallyTruncated;
 
 /// Keccak-f[1600] state bits.
-pub(crate) const STATE_BITS: usize = 1600;
+pub const STATE_BITS: usize = 1600;
 /// Keccak-256 rate bits.
-pub(crate) const RATE_BITS: usize = 1088;
+pub const RATE_BITS: usize = 1088;
 /// Keccak-256 digest bits (32 bytes).
 const DIGEST_BITS: usize = 256;
 /// Digest as 16-bit limbs.
-pub(crate) const DIGEST_LIMBS: usize = DIGEST_BITS / 16;
+pub const DIGEST_LIMBS: usize = DIGEST_BITS / 16;
 
 // Extra columns layout (appended after `p3_keccak_air` columns):
 // [hash_end, seen_end, active, block_bits(1088), out_bits(1600)]
-pub(crate) const HASH_END_IDX: usize = NUM_KECCAK_COLS;
-pub(crate) const SEEN_END_IDX: usize = HASH_END_IDX + 1;
-pub(crate) const ACTIVE_IDX: usize = SEEN_END_IDX + 1;
-pub(crate) const BLOCK_BITS_START: usize = ACTIVE_IDX + 1;
-pub(crate) const OUT_BITS_START: usize = BLOCK_BITS_START + RATE_BITS;
+pub const HASH_END_IDX: usize = NUM_KECCAK_COLS;
+pub const SEEN_END_IDX: usize = HASH_END_IDX + 1;
+pub const ACTIVE_IDX: usize = SEEN_END_IDX + 1;
+pub const BLOCK_BITS_START: usize = ACTIVE_IDX + 1;
+pub const OUT_BITS_START: usize = BLOCK_BITS_START + RATE_BITS;
 const EXTRA_COLS: usize = 1 + 1 + 1 + RATE_BITS + STATE_BITS;
 
 #[derive(Clone, Debug, Default)]
@@ -228,6 +228,41 @@ impl<AB: AirBuilderWithPublicValues> Air<AB> for KeccakSpongeAir {
                 builder
                     .when(local_hash_end.clone())
                     .assert_zero(out_limb - pv_limb);
+            }
+        }
+
+        // Zero-IV constraint: on the first row, the sponge initial state must be
+        // block_bits (rate) / 0 (capacity).  This enforces the standard all-zero IV.
+        //
+        // We recover each input bit A[y,x,z] = A' XOR C XOR C' (same identity as
+        // absorb chaining) and check it against block_bits[i] for rate bits, or 0
+        // for capacity bits.
+        {
+            let local_block_bits = &local_row[BLOCK_BITS_START..BLOCK_BITS_START + RATE_BITS];
+
+            let local_input_bit = |x: usize, y: usize, z: usize| -> AB::Expr {
+                let a_prime: AB::Expr = local_keccak.a_prime[y][x][z].clone().into();
+                let c: AB::Expr = local_keccak.c[x][z].clone().into();
+                let c_prime: AB::Expr = local_keccak.c_prime[x][z].clone().into();
+                xor3(two.clone(), a_prime, c, c_prime)
+            };
+
+            #[allow(clippy::needless_range_loop)]
+            for bit_idx in 0..STATE_BITS {
+                let lane = bit_idx / 64;
+                let z = bit_idx % 64;
+                let x = lane % 5;
+                let y = lane / 5;
+
+                let input = local_input_bit(x, y, z);
+
+                let expected: AB::Expr = if bit_idx < RATE_BITS {
+                    local_block_bits[bit_idx].clone().into()
+                } else {
+                    AB::Expr::ZERO
+                };
+
+                builder.when_first_row().assert_zero(input - expected);
             }
         }
 
