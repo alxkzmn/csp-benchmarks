@@ -3,9 +3,9 @@ use std::borrow::Cow;
 use anyhow::Result;
 use utils::harness::{AuditStatus, BenchProperties};
 use whirlaway_sys::AirSettings;
-use whirlaway_sys::circuits::keccak256::Keccak256Circuit;
+use whirlaway_sys::circuits::keccak256::{F, Keccak256Circuit, Keccak256Input};
 use whirlaway_sys::hashers::KECCAK_DIGEST_ELEMS;
-use whirlaway_sys::proving_system::{self, KeccakProvingSystemConfig, Prepared};
+use whirlaway_sys::proving_system::{self, Circuit, KeccakProvingSystemConfig, Prepared};
 
 pub const WHIRLAWAY_BENCH_PROPERTIES: BenchProperties = BenchProperties {
     proving_system: Cow::Borrowed("Whirlaway"),
@@ -46,21 +46,31 @@ pub fn prepare_keccak_with_settings(input_size: usize, settings: AirSettings) ->
     )
 }
 
-pub fn prove_keccak(prepared: &PreparedKeccak) -> KeccakProof {
-    let (message, _digest) = utils::generate_keccak_input(prepared.circuit.input_size);
-    proving_system::prove(prepared, &message)
+pub fn prove_keccak(prepared: &PreparedKeccak) -> (KeccakProof, Vec<F>) {
+    let (message, digest) = utils::generate_keccak_input(prepared.circuit.input_size);
+    let message = Keccak256Input {
+        message,
+        expected_digest: digest.try_into().expect("Digest length mismatch"),
+    };
+    let public_values = Keccak256Circuit::public_values(&prepared.circuit, &message);
+    let proof = proving_system::prove(prepared, &message);
+    (proof, public_values)
 }
 
-pub fn verify_keccak(prepared: &PreparedKeccak, proof: &KeccakProof) -> Result<()> {
-    proving_system::verify(prepared, proof).map_err(anyhow::Error::msg)
+pub fn verify_keccak(
+    prepared: &PreparedKeccak,
+    proof_with_digest: &(KeccakProof, Vec<F>),
+) -> Result<()> {
+    proving_system::verify(prepared, &proof_with_digest.0, &proof_with_digest.1)
+        .map_err(anyhow::Error::msg)
 }
 
 pub fn preprocessing_size(prepared: &PreparedKeccak) -> usize {
     proving_system::preprocessing_size(prepared)
 }
 
-pub fn proof_size(proof: &KeccakProof) -> usize {
-    proving_system::proof_size(proof)
+pub fn proof_size(proof_with_input: &(KeccakProof, Vec<F>)) -> usize {
+    proving_system::proof_size(&proof_with_input.0)
 }
 
 pub fn num_constraints(prepared: &PreparedKeccak) -> usize {

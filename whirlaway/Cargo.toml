@@ -11,7 +11,7 @@ clap = { workspace = true }
 criterion = { workspace = true }
 utils = { workspace = true }
 
-whirlaway_sys = { package = "whirlaway", git = "https://github.com/alxkzmn/Whirlaway", rev ="8932dcd" }
+whirlaway_sys = { package = "whirlaway", git = "https://github.com/alxkzmn/Whirlaway", rev ="ef5ee4e" }
 
 [[bench]]
 name = "keccak"
