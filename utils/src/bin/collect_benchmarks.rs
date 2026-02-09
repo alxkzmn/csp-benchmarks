@@ -1,3 +1,4 @@
+use chrono::Utc;
 use glob::glob;
 use serde::Serialize;
 use serde_json::Value;
@@ -21,6 +22,7 @@ struct CollectedBenchmarks {
 #[skip_serializing_none]
 #[derive(Serialize)]
 struct Metadata {
+    timestamp: String,
     workflow_run_url: Option<String>,
     artifact_urls: Option<Vec<String>>,
 }
@@ -54,12 +56,14 @@ fn system_key(name: &str, feat: &Option<String>) -> String {
 
 /// Build [`Metadata`] from environment variables, if available.
 fn build_metadata() -> Metadata {
+    let timestamp = Utc::now().to_rfc3339();
     let workflow_run_url = env::var("WORKFLOW_RUN_URL").ok().filter(|s| !s.is_empty());
     let artifact_urls = env::var("ARTIFACT_URLS")
         .ok()
         .filter(|s| !s.is_empty())
         .map(|s| s.split(',').map(|u| u.trim().to_string()).collect());
     Metadata {
+        timestamp,
         workflow_run_url,
         artifact_urls,
     }
@@ -394,6 +398,7 @@ mod tests {
 
         let collected = CollectedBenchmarks {
             metadata: Metadata {
+                timestamp: "2026-01-01T00:00:00+00:00".to_string(),
                 workflow_run_url: None,
                 artifact_urls: None,
             },
@@ -439,6 +444,9 @@ mod tests {
         // Cannot guarantee env vars are unset, but the function should not panic
         let json = serde_json::to_string(&metadata).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        // Timestamp should always be present
+        assert!(parsed.get("timestamp").is_some());
+        assert!(!metadata.timestamp.is_empty());
         // When both are None, they should not appear in JSON (skip_serializing_none)
         if metadata.workflow_run_url.is_none() {
             assert!(parsed.get("workflow_run_url").is_none());
