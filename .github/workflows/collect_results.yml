@@ -182,6 +182,7 @@ jobs:
       - name: Collect benchmarks
         if: ${{ steps.gate.outputs.proceed == 'true' }}
         env:
+          COMMIT_SHA: ${{ env.SHA }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ARTIFACT_URLS: ${{ steps.gate.outputs.artifact_urls }}
         run: |

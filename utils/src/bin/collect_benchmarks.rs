@@ -23,6 +23,7 @@ struct CollectedBenchmarks {
 #[derive(Serialize)]
 struct Metadata {
     timestamp: String,
+    commit_sha: Option<String>,
     workflow_run_url: Option<String>,
     artifact_urls: Option<Vec<String>>,
 }
@@ -57,6 +58,7 @@ fn system_key(name: &str, feat: &Option<String>) -> String {
 /// Build [`Metadata`] from environment variables, if available.
 fn build_metadata() -> Metadata {
     let timestamp = Utc::now().to_rfc3339();
+    let commit_sha = env::var("COMMIT_SHA").ok().filter(|s| !s.is_empty());
     let workflow_run_url = env::var("WORKFLOW_RUN_URL").ok().filter(|s| !s.is_empty());
     let artifact_urls = env::var("ARTIFACT_URLS")
         .ok()
@@ -64,6 +66,7 @@ fn build_metadata() -> Metadata {
         .map(|s| s.split(',').map(|u| u.trim().to_string()).collect());
     Metadata {
         timestamp,
+        commit_sha,
         workflow_run_url,
         artifact_urls,
     }
@@ -399,6 +402,7 @@ mod tests {
         let collected = CollectedBenchmarks {
             metadata: Metadata {
                 timestamp: "2026-01-01T00:00:00+00:00".to_string(),
+                commit_sha: None,
                 workflow_run_url: None,
                 artifact_urls: None,
             },
