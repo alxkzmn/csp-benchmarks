@@ -18,7 +18,7 @@ serde = { workspace = true }
 tracing = { workspace = true }
 utils = { workspace = true }
 
-# HyperPlonk system (preferred: git pinned).
+# HyperPlonk
 p3-hyperplonk = { git = "https://github.com/alxkzmn/p3-playground", rev = "23a6b57", package = "p3-hyperplonk", features = ["bench"] }
 p3-whir = { git = "https://github.com/alxkzmn/p3-playground", rev = "23a6b57", package = "p3-whir", features = ["parallel"] }
 

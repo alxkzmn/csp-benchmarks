@@ -7,3 +7,12 @@
 [submodule "circom/hash-circuits"]
 	path = circom/hash-circuits
 	url = https://github.com/bkomuves/hash-circuits
+[submodule "hyperplonk/p3-playground"]
+	path = hyperplonk/p3-playground
+	url = https://github.com/alxkzmn/p3-playground
+[submodule "whirlaway/Whirlaway"]
+	path = whirlaway/Whirlaway
+	url = https://github.com/alxkzmn/Whirlaway
+[submodule "whir-p3"]
+	path = whir-p3
+	url = https://github.com/alxkzmn/whir-p3.git
