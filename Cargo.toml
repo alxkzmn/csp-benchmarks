@@ -49,30 +49,30 @@ tracing-forest = "0.1.6"
 tracing-subscriber = { version = "0.3.17", default-features = false, features = ["alloc"] }
 whir-p3 = { path = "./whir-p3" }
 
-p3-air = { git = "https://github.com/Plonky3/Plonky3" }
-p3-baby-bear = { git = "https://github.com/Plonky3/Plonky3" }
-p3-blake3 = { git = "https://github.com/Plonky3/Plonky3" }
-p3-challenger = { git = "https://github.com/Plonky3/Plonky3" }
-p3-circle = { git = "https://github.com/Plonky3/Plonky3" }
-p3-commit = { git = "https://github.com/Plonky3/Plonky3" }
-p3-dft = { git = "https://github.com/Plonky3/Plonky3" }
-p3-field = { git = "https://github.com/Plonky3/Plonky3" }
-p3-fri = { git = "https://github.com/Plonky3/Plonky3" }
-p3-goldilocks = { git = "https://github.com/Plonky3/Plonky3" }
-p3-interpolation = { git = "https://github.com/Plonky3/Plonky3" }
-p3-keccak = { git = "https://github.com/Plonky3/Plonky3" }
-p3-koala-bear = { git = "https://github.com/Plonky3/Plonky3" }
-p3-matrix = { git = "https://github.com/Plonky3/Plonky3" }
-p3-maybe-rayon = { git = "https://github.com/Plonky3/Plonky3" }
-p3-mds = { git = "https://github.com/Plonky3/Plonky3" }
-p3-merkle-tree = { git = "https://github.com/Plonky3/Plonky3" }
-p3-multilinear-util = { git = "https://github.com/Plonky3/Plonky3" }
-p3-mersenne-31 = { git = "https://github.com/Plonky3/Plonky3" }
-p3-monty-31 = { git = "https://github.com/Plonky3/Plonky3" }
-p3-poseidon2 = { git = "https://github.com/Plonky3/Plonky3" }
-p3-poseidon2-air = { git = "https://github.com/Plonky3/Plonky3" }
-p3-symmetric = { git = "https://github.com/Plonky3/Plonky3" }
-p3-util = { git = "https://github.com/Plonky3/Plonky3" }
+p3-air = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-baby-bear = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-blake3 = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-challenger = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-circle = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-commit = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-dft = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-field = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-fri = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-goldilocks = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-interpolation = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-keccak = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-koala-bear = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-matrix = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-maybe-rayon = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-mds = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-merkle-tree = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-multilinear-util = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-mersenne-31 = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-monty-31 = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-poseidon2 = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-poseidon2-air = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-symmetric = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
+p3-util = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
 
 p3-air-ext = { path = "./hyperplonk/p3-playground/air-ext" }
 p3-fri-ext = { path = "./hyperplonk/p3-playground/fri-ext" }
@@ -95,23 +95,3 @@ allocative = { git = "https://github.com/facebookexperimental/allocative", rev =
 [patch."https://github.com/alxkzmn/p3-playground"]
 p3-hyperplonk = { path="./hyperplonk/p3-playground/hyperplonk" }
 p3-whir = { path="./hyperplonk/p3-playground/whir" }
-
-[patch."https://github.com/Plonky3/Plonky3"]
-p3-air = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-challenger = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-commit = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-dft = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-field = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-interpolation = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-keccak = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-keccak-air = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-koala-bear = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-matrix = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-maybe-rayon = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-mds = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-merkle-tree = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-monty-31 = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-multilinear-util = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-poseidon2 = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-symmetric = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }
-p3-util = { git = "https://github.com/Plonky3//Plonky3", rev = "a9d5bbb5" }

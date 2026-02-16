@@ -19,8 +19,8 @@ use p3_hyperplonk::{
 use p3_keccak::Keccak256Hash;
 use p3_koala_bear::KoalaBear;
 use p3_whir::{
-    FoldingFactor, InitialPhaseConfig, KeccakNodeCompress, KeccakU32BeLeafHasher,
-    ProtocolParameters, SecurityAssumption, WhirPcs,
+    FoldingFactor, KeccakNodeCompress, KeccakU32BeLeafHasher, ProtocolParameters,
+    SecurityAssumption, WhirPcs,
 };
 
 use crate::keccak::sponge_air::KeccakSpongeAir;
@@ -53,7 +53,6 @@ fn make_config() -> HyperConfig {
     let field_hash = FieldHash::default();
     let compress = Compress::default();
     let whir_params = ProtocolParameters {
-        initial_phase_config: InitialPhaseConfig::WithStatementClassic,
         security_level,
         pow_bits,
         folding_factor: FoldingFactor::Constant(4),
@@ -72,7 +71,6 @@ fn make_config() -> HyperConfig {
 
 pub fn prepare(input_size: usize) -> Result<PreparedKeccak> {
     let air = KeccakSpongeAir::new();
-    // Public values are 16 16-bit limbs (little-endian) of the Keccak256 digest.
 
     let config = make_config();
     let (vk, pk) = keygen::<Val, _>([&air]);
@@ -87,13 +85,14 @@ pub fn prepare(input_size: usize) -> Result<PreparedKeccak> {
 }
 
 pub fn prove(prepared: &PreparedKeccak) -> Result<(Vec<Val>, KeccakProof)> {
-    // Build AIR + trace + public digest.
+    // Build Keccak sponge trace from deterministic input and export digest limbs as public values.
     let (trace, digest_limbs) =
         trace::generate_trace_and_public_digest_limbs::<Val>(prepared.input_size)
             .context("failed to build keccak sponge trace")?;
+
     let public_values: Vec<Val> = digest_limbs
-        .into_iter()
-        .map(|x| Val::new(x as u32))
+        .iter()
+        .map(|&limb| Val::new(limb as u32))
         .collect();
 
     let prover_inputs = vec![ProverInput::new(
