@@ -441,9 +441,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     rows = _filter_systems(rows, systems)
 
     if not rows:
-        raise SystemExit(
-            "No rows to plot (check --targets/--systems and input files)."
-        )
+        raise SystemExit("No rows to plot (check --targets/--systems and input files).")
 
     _ensure_out_dir(args.out)
 

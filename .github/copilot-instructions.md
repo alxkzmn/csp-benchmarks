@@ -10,6 +10,10 @@ See `README.MD` for project overview and `CONTRIBUTING.md` for the full contribu
 - **When running git in automation**, use `git --no-pager` (avoid interactive pagers).
 - **Avoid changing `utils/` APIs** unless necessary (it affects all benchmarks).
 
+## Python visualizer
+
+- **Use the project virtualenv for visualizer scripts**: run `source .venv/bin/activate` before executing `results/visualizer/plot_benchmarks.py` or other Python tooling in this repo.
+
 ## Rust benchmarks
 
 - **Workspace**: new system = new top-level crate + add it to `[workspace].members` in `Cargo.toml`.
