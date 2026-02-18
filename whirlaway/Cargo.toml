@@ -1,17 +1,19 @@
 [package]
-name = "whirlaway"
+name = "whirlaway-bench"
 version = "0.1.0"
 edition = "2024"
 
 [lib]
+name = "whirlaway"
 
 [dependencies]
-anyhow = { workspace = true }
-clap = { workspace = true }
-criterion = { workspace = true }
-utils = { workspace = true }
+whir-p3 = { path = "../whir-p3" }
+anyhow = "1.0.81"
+clap = { version = "4.5.20", features = ["derive", "env"] }
+criterion = "0.5.1"
+utils = { path = "../utils" }
 
-whirlaway_sys = { package = "whirlaway", git = "https://github.com/alxkzmn/Whirlaway", rev ="ef5ee4e" }
+whirlaway_sys = { package = "whirlaway", path = "Whirlaway" }
 
 [[bench]]
 name = "keccak"

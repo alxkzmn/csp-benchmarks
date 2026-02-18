@@ -4,7 +4,6 @@ members = [
     "binius64",
     "hyperplonk",
     "plonky2",
-    "whirlaway",
     "openvm",
     "provekit",
     "polyhedra-expander",
@@ -18,9 +17,10 @@ members = [
 exclude = [
     "cairo-m",
     "nexus",
+    "whirlaway",
     "hyperplonk/p3-playground",
-    "whirlaway/Whirlaway",
-    "whir-p3"
+    "whir-p3",
+    "whir-verifier"
 ]
 
 [workspace.package]

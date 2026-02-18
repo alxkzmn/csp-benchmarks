@@ -2,10 +2,10 @@ use std::borrow::Cow;
 
 use anyhow::Result;
 use utils::harness::{AuditStatus, BenchProperties};
-use whirlaway_sys::AirSettings;
-use whirlaway_sys::circuits::keccak256::{F, Keccak256Circuit, Keccak256Input};
+use whirlaway_sys::circuits::keccak256::{Keccak256Circuit, Keccak256Input, F};
 use whirlaway_sys::hashers::KECCAK_DIGEST_ELEMS;
 use whirlaway_sys::proving_system::{self, Circuit, KeccakProvingSystemConfig, Prepared};
+use whirlaway_sys::AirSettings;
 
 pub const WHIRLAWAY_BENCH_PROPERTIES: BenchProperties = BenchProperties {
     proving_system: Cow::Borrowed("Whirlaway"),
