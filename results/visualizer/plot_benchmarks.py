@@ -4,6 +4,7 @@ import argparse
 import json
 import math
 import os
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -186,12 +187,19 @@ def _configure_log_y_axis(
     ax.yaxis.set_minor_formatter(mticker.NullFormatter())
 
 
-def _series_label(row: Dict[str, Any]) -> str:
+def _series_label(row: Dict[str, Any], include_run_label: bool = False) -> str:
     name = str(row.get("name", ""))
     feat = row.get("feat")
     if feat is None or feat == "":
-        return name
-    return f"{name}[{feat}]"
+        label = name
+    else:
+        label = f"{name}[{feat}]"
+
+    if include_run_label:
+        run_label = str(row.get("__run_label", "")).strip()
+        if run_label:
+            return f"{label} ({run_label})"
+    return label
 
 
 def _load_rows(path: Path) -> List[Dict[str, Any]]:
@@ -234,6 +242,24 @@ def _filter_rows(
     return [r for r in rows if str(r.get("target", "")) in allowed]
 
 
+def _filter_systems(
+    rows: List[Dict[str, Any]], systems: Optional[Sequence[str]]
+) -> List[Dict[str, Any]]:
+    if not systems:
+        return rows
+    allowed = {s.strip() for s in systems if s.strip()}
+    if not allowed:
+        return rows
+
+    filtered: List[Dict[str, Any]] = []
+    for row in rows:
+        name = str(row.get("name", ""))
+        series = _series_label(row, include_run_label=False)
+        if name in allowed or series in allowed:
+            filtered.append(row)
+    return filtered
+
+
 def _plot_metric(
     *,
     target: str,
@@ -243,8 +269,9 @@ def _plot_metric(
     out_path: Path,
     title_prefix: str,
     log_y: bool,
+    legend_outside: bool = False,
 ) -> None:
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(11, 6))
 
     plotted_values: List[float] = []
     plotted_xs_set: set[int] = set()
@@ -291,13 +318,17 @@ def _plot_metric(
     # Only show legend if there is something to show.
     handles, labels = ax.get_legend_handles_labels()
     if labels:
-        ax.legend(
-            loc="upper left",
-            bbox_to_anchor=(1.02, 1.0),
-            borderaxespad=0.0,
-            frameon=False,
-        )
-        fig.tight_layout(rect=(0, 0, 0.78, 1))
+        if legend_outside:
+            ax.legend(
+                loc="upper left",
+                bbox_to_anchor=(1.02, 1.0),
+                borderaxespad=0.0,
+                frameon=False,
+            )
+            fig.tight_layout(rect=(0, 0, 0.78, 1))
+        else:
+            ax.legend(loc="best", frameon=False)
+            fig.tight_layout()
     else:
         fig.tight_layout()
 
@@ -316,6 +347,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Path to a collected benchmarks JSON (array of rows).",
     )
     parser.add_argument(
+        "--baseline",
+        default=None,
+        type=Path,
+        help="Optional second collected benchmarks JSON to overlay for comparison.",
+    )
+    parser.add_argument(
         "--out",
         default=Path("visualizer/out"),
         type=Path,
@@ -325,6 +362,21 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--targets",
         default=None,
         help="Optional comma-separated list of targets to plot (e.g. keccak,sha256).",
+    )
+    parser.add_argument(
+        "--systems",
+        default=None,
+        help="Optional comma-separated list of proving systems to include (matches 'name' or 'name[feat]').",
+    )
+    parser.add_argument(
+        "--input-label",
+        default=None,
+        help="Legend label for --input (default: input file stem).",
+    )
+    parser.add_argument(
+        "--baseline-label",
+        default=None,
+        help="Legend label for --baseline (default: baseline file stem).",
     )
     parser.add_argument(
         "--log-y",
@@ -337,22 +389,72 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Include the input JSON filename (stem) in the plot title.",
     )
 
+    parser.add_argument(
+        "--legend-outside",
+        action="store_true",
+        help="Place the legend outside the plot area (may squash axes if labels are long).",
+    )
+
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     targets: Optional[List[str]] = None
     if args.targets:
         targets = [t.strip() for t in str(args.targets).split(",") if t.strip()]
 
-    rows = _load_rows(args.input)
+    systems: Optional[List[str]] = None
+    if args.systems:
+        systems = [s.strip() for s in str(args.systems).split(",") if s.strip()]
+
+    def _default_run_label(path: Path) -> str:
+        label = path.stem
+        if label.startswith("collected_benchmarks_"):
+            label = label[len("collected_benchmarks_") :]
+
+        # Shorten long commit hashes in labels for readability.
+        label = re.sub(r"([0-9a-f]{8})[0-9a-f]{8,}", r"\1", label)
+        return label
+
+    dataset_specs: List[Tuple[Path, str]] = []
+    input_label = (
+        str(args.input_label).strip()
+        if args.input_label
+        else _default_run_label(args.input)
+    )
+    dataset_specs.append((args.input, input_label))
+    if args.baseline is not None:
+        baseline_label = (
+            str(args.baseline_label).strip()
+            if args.baseline_label
+            else _default_run_label(args.baseline)
+        )
+        dataset_specs.append((args.baseline, baseline_label))
+
+    rows: List[Dict[str, Any]] = []
+    for input_path, run_label in dataset_specs:
+        loaded = _load_rows(input_path)
+        for row in loaded:
+            enriched = dict(row)
+            enriched["__run_label"] = run_label
+            rows.append(enriched)
+
     rows = _filter_rows(rows, targets)
+    rows = _filter_systems(rows, systems)
 
     if not rows:
-        raise SystemExit("No rows to plot (check --targets and input file).")
+        raise SystemExit(
+            "No rows to plot (check --targets/--systems and input files)."
+        )
 
     _ensure_out_dir(args.out)
 
     input_stem = args.input.stem
-    title_prefix = input_stem if bool(args.include_input_name) else ""
+    if bool(args.include_input_name):
+        if args.baseline is None:
+            title_prefix = input_stem
+        else:
+            title_prefix = f"{args.input.stem} vs {args.baseline.stem}"
+    else:
+        title_prefix = ""
 
     rows_by_target: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
     for r in rows:
@@ -362,6 +464,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         rows_by_target[target].append(r)
 
     for target, target_rows in sorted(rows_by_target.items(), key=lambda kv: kv[0]):
+        include_run_label = len(dataset_specs) > 1
         input_sizes = _sorted_unique(
             int(r.get("input_size"))
             for r in target_rows
@@ -381,7 +484,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 if not isinstance(raw_val, int):
                     continue
 
-                series = _series_label(r)
+                series = _series_label(r, include_run_label=include_run_label)
                 input_size = int(r["input_size"])
                 series_to_values[series][input_size] = metric.convert(raw_val)
 
@@ -400,6 +503,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 out_path=out_path,
                 title_prefix=title_prefix,
                 log_y=bool(args.log_y),
+                legend_outside=bool(args.legend_outside),
             )
 
     return 0
