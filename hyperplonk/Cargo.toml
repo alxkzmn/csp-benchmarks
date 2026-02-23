@@ -48,10 +48,26 @@ p3-koala-bear = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
 p3-matrix = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
 
 [[bench]]
-name = "keccak"
+name = "keccak_4"
+harness = false
+
+[[bench]]
+name = "keccak_5"
+harness = false
+
+[[bench]]
+name = "keccak_8"
 harness = false
 
 [[bin]]
-name = "keccak_mem_hyperplonk"
-path = "src/bin/keccak_mem.rs"
+name = "keccak_mem_hyperplonk_4"
+path = "src/bin/keccak_mem_4.rs"
+
+[[bin]]
+name = "keccak_mem_hyperplonk_5"
+path = "src/bin/keccak_mem_5.rs"
+
+[[bin]]
+name = "keccak_mem_hyperplonk_8"
+path = "src/bin/keccak_mem_8.rs"
 

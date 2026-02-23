@@ -1,4 +1,5 @@
 use clap::Parser;
+use whirlaway_sys::circuits::keccak256::Binomial4Challenge;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -8,6 +9,6 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    let prepared = whirlaway::prepare_keccak(args.input_size);
+    let prepared = whirlaway::prepare_keccak::<Binomial4Challenge>(args.input_size);
     let _ = whirlaway::prove_keccak(&prepared);
 }

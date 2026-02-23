@@ -11,7 +11,8 @@ pub mod trace;
 use anyhow::{Context, Result};
 use p3_challenger::{HashChallenger, SerializingChallenger32};
 use p3_dft::Radix2DitParallel;
-use p3_field::extension::BinomialExtensionField;
+use p3_field::extension::{BinomialExtensionField, QuinticTrinomialExtensionField};
+use p3_field::{ExtensionField, TwoAdicField};
 use p3_hyperplonk::HyperPlonkConfig;
 use p3_hyperplonk::{
     ProverInput, VerifierInput, keygen, prove as hyperprove, verify as hyperverify,
@@ -26,29 +27,33 @@ use p3_whir::{
 use crate::keccak::sponge_air::KeccakSpongeAir;
 
 type Val = KoalaBear;
-type Challenge = BinomialExtensionField<Val, 4>;
+pub type Binomial4Challenge = BinomialExtensionField<Val, 4>;
+pub type Binomial8Challenge = BinomialExtensionField<Val, 8>;
+pub type QuinticChallenge = QuinticTrinomialExtensionField<Val>;
 type FieldHash = KeccakU32BeLeafHasher;
 type Compress = KeccakNodeCompress;
-type Dft<Val> = Radix2DitParallel<Val>;
-type Pcs<Val, Dft> = WhirPcs<Val, Dft, FieldHash, Compress, 4>;
-type Challenger = SerializingChallenger32<Val, HashChallenger<u8, Keccak256Hash, 32>>;
+pub type Dft<Val> = Radix2DitParallel<Val>;
+pub type Pcs<Val, Dft> = WhirPcs<Val, Dft, FieldHash, Compress, 4>;
+pub type Challenger = SerializingChallenger32<Val, HashChallenger<u8, Keccak256Hash, 32>>;
 
-pub type HyperConfig = HyperPlonkConfig<Pcs<Val, Dft<Val>>, Challenge, Challenger>;
+pub type HyperConfig4 = HyperPlonkConfig<Pcs<Val, Dft<Val>>, Binomial4Challenge, Challenger>;
+pub type HyperConfig8 = HyperPlonkConfig<Pcs<Val, Dft<Val>>, Binomial8Challenge, Challenger>;
 
-pub type KeccakProof = p3_hyperplonk::Proof<HyperConfig>;
+pub type KeccakProof4 = p3_hyperplonk::Proof<HyperConfig4>;
+pub type KeccakProof8 = p3_hyperplonk::Proof<HyperConfig8>;
 
-pub struct PreparedKeccak {
+pub struct PreparedKeccak<E: ExtensionField<Val>> {
     pub input_size: usize,
-    pub config: HyperConfig,
+    pub config: HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>,
     pub air: KeccakSpongeAir,
     pub pk: p3_hyperplonk::ProvingKey,
     pub vk: p3_hyperplonk::VerifyingKey,
 }
 
-fn make_config() -> HyperConfig {
+pub fn make_config<E: ExtensionField<Val>>() -> HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>
+{
     let dft = Dft::<Val>::default();
-    // Keep consistent with p3-playground example.
-    let security_level = 100;
+    let security_level = if E::DIMENSION == 4 { 100 } else { 128 };
     let pow_bits = 20;
     let field_hash = FieldHash::default();
     let compress = Compress::default();
@@ -63,18 +68,18 @@ fn make_config() -> HyperConfig {
         rs_domain_initial_reduction_factor: 3,
     };
 
-    HyperPlonkConfig::<_, Challenge, _>::new(
+    HyperPlonkConfig::<_, E, _>::new(
         Pcs::new(dft, whir_params),
         Challenger::from_hasher(Vec::new(), Keccak256Hash),
     )
 }
 
-pub fn prepare(input_size: usize) -> Result<PreparedKeccak> {
+pub fn prepare<E: ExtensionField<Val>>(
+    input_size: usize,
+    config: HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>,
+) -> Result<PreparedKeccak<E>> {
     let air = KeccakSpongeAir::new();
-
-    let config = make_config();
     let (vk, pk) = keygen::<Val, _>([&air]);
-
     Ok(PreparedKeccak {
         input_size,
         config,
@@ -84,7 +89,12 @@ pub fn prepare(input_size: usize) -> Result<PreparedKeccak> {
     })
 }
 
-pub fn prove(prepared: &PreparedKeccak) -> Result<(Vec<Val>, KeccakProof)> {
+pub fn prove<E: ExtensionField<Val> + TwoAdicField>(
+    prepared: &PreparedKeccak<E>,
+) -> Result<(
+    Vec<Val>,
+    p3_hyperplonk::Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+)> {
     // Build Keccak sponge trace from deterministic input and export digest limbs as public values.
     let (trace, digest_limbs) =
         trace::generate_trace_and_public_digest_limbs::<Val>(prepared.input_size)
@@ -106,23 +116,31 @@ pub fn prove(prepared: &PreparedKeccak) -> Result<(Vec<Val>, KeccakProof)> {
     ))
 }
 
-pub fn verify(prepared: &PreparedKeccak, proof: &(Vec<Val>, KeccakProof)) -> Result<()> {
+pub fn verify<E: ExtensionField<Val> + TwoAdicField>(
+    prepared: &PreparedKeccak<E>,
+    proof: &(
+        Vec<Val>,
+        p3_hyperplonk::Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+    ),
+) -> Result<()> {
     let verifier_inputs = vec![VerifierInput::new(prepared.air.clone(), proof.0.clone())];
     hyperverify(&prepared.config, &prepared.vk, verifier_inputs, &proof.1)
         .map_err(|e| anyhow::anyhow!("hyperplonk verification failed: {e:?}"))
 }
 
-pub fn preprocessing_size(prepared: &PreparedKeccak) -> usize {
+pub fn preprocessing_size<E: ExtensionField<Val>>(prepared: &PreparedKeccak<E>) -> usize {
     bincode::serialize(&prepared.pk)
         .map(|v| v.len())
         .unwrap_or(0)
 }
 
-pub fn proof_size(proof: &KeccakProof) -> usize {
+pub fn proof_size<E: ExtensionField<Val> + TwoAdicField>(
+    proof: &p3_hyperplonk::Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+) -> usize {
     bincode::serialize(proof).map(|v| v.len()).unwrap_or(0)
 }
 
-pub fn num_constraints(prepared: &PreparedKeccak) -> usize {
+pub fn num_constraints<E: ExtensionField<Val>>(prepared: &PreparedKeccak<E>) -> usize {
     prepared
         .vk
         .metas()

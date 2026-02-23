@@ -1,8 +1,12 @@
 use std::borrow::Cow;
 
 use anyhow::Result;
+use p3_field::{ExtensionField, TwoAdicField};
+use p3_hyperplonk::{HyperPlonkConfig, Proof};
 use p3_koala_bear::KoalaBear;
 use utils::harness::{AuditStatus, BenchProperties};
+
+use crate::keccak::{Challenger, Dft, Pcs, PreparedKeccak, make_config};
 
 pub mod keccak;
 
@@ -34,25 +38,41 @@ pub const HYPERPLONK_BENCH_PROPERTIES: BenchProperties = BenchProperties {
     isa: None,
 };
 
-pub type PreparedKeccak = keccak::PreparedKeccak;
-pub type KeccakProof = keccak::KeccakProof;
-
-pub fn prepare_keccak(input_size: usize) -> Result<PreparedKeccak> {
-    keccak::prepare(input_size)
+pub fn prepare_keccak<E: ExtensionField<Val>>(
+    input_size: usize,
+) -> Result<keccak::PreparedKeccak<E>> {
+    let config = make_config::<E>();
+    keccak::prepare(input_size, config)
 }
 
-pub fn prove_keccak(prepared: &PreparedKeccak) -> Result<(Vec<Val>, KeccakProof)> {
+pub fn prove_keccak<E: ExtensionField<Val> + TwoAdicField>(
+    prepared: &PreparedKeccak<E>,
+) -> Result<(
+    Vec<Val>,
+    Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+)> {
     keccak::prove(prepared)
 }
 
-pub fn verify_keccak(prepared: &PreparedKeccak, proof: &(Vec<Val>, KeccakProof)) -> Result<()> {
+pub fn verify_keccak<E: ExtensionField<Val> + TwoAdicField>(
+    prepared: &PreparedKeccak<E>,
+    proof: &(
+        Vec<Val>,
+        Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+    ),
+) -> Result<()> {
     keccak::verify(prepared, proof)
 }
 
-pub fn preprocessing_size(prepared: &PreparedKeccak) -> usize {
+pub fn preprocessing_size<E: ExtensionField<Val>>(prepared: &PreparedKeccak<E>) -> usize {
     keccak::preprocessing_size(prepared)
 }
 
-pub fn proof_size(proof: &(Vec<Val>, KeccakProof)) -> usize {
+pub fn proof_size<E: ExtensionField<Val> + TwoAdicField>(
+    proof: &(
+        Vec<Val>,
+        Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+    ),
+) -> usize {
     keccak::proof_size(&proof.1)
 }

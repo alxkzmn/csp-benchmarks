@@ -14,11 +14,28 @@ criterion = "0.5.1"
 utils = { path = "../utils" }
 
 whirlaway_sys = { package = "whirlaway", path = "Whirlaway" }
+p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "c38eb05" }
 
 [[bench]]
-name = "keccak"
+name = "keccak_4"
+harness = false
+
+[[bench]]
+name = "keccak_8"
+harness = false
+
+[[bench]]
+name = "keccak_5"
 harness = false
 
 [[bin]]
-name = "keccak_mem_whirlaway"
-path = "src/bin/keccak_mem.rs"
+name = "keccak_mem_whirlaway_4"
+path = "src/bin/keccak_mem_4.rs"
+
+[[bin]]
+name = "keccak_mem_whirlaway_8"
+path = "src/bin/keccak_mem_8.rs"
+
+[[bin]]
+name = "keccak_mem_whirlaway_5"
+path = "src/bin/keccak_mem_5.rs"

@@ -4,7 +4,7 @@
 //! equals `block_bits` (rate portion) XOR zero (capacity portion).  Flipping a
 //! capacity bit in the first row should cause verification to fail.
 
-use hyperplonk::test_utils::RATE_BITS;
+use hyperplonk::{keccak::Binomial4Challenge, test_utils::RATE_BITS};
 use p3_field::PrimeCharacteristicRing;
 use p3_keccak_air::NUM_KECCAK_COLS;
 use p3_koala_bear::KoalaBear;
@@ -17,7 +17,7 @@ type Val = KoalaBear;
 /// malicious prover using a non-standard IV.
 #[test]
 fn tampered_iv_capacity_bit_is_rejected() {
-    let prepared = hyperplonk::prepare_keccak(128).expect("prepare failed");
+    let prepared = hyperplonk::prepare_keccak::<Binomial4Challenge>(128).expect("prepare failed");
 
     // Generate an honest trace.
     let (mut trace, digest_limbs) =

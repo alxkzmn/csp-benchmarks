@@ -1,0 +1,19 @@
+use clap::Parser;
+use hyperplonk::keccak::{Binomial8Challenge, PreparedKeccak};
+
+#[cfg(target_family = "unix")]
+#[global_allocator]
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
+#[derive(Parser, Debug)]
+struct Args {
+    #[arg(long = "input-size")]
+    input_size: usize,
+}
+
+fn main() {
+    let args = Args::parse();
+    let prepared: PreparedKeccak<Binomial8Challenge> =
+        hyperplonk::prepare_keccak(args.input_size).expect("prepare failed");
+    let _ = hyperplonk::prove_keccak(&prepared);
+}

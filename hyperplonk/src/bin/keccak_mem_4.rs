@@ -1,4 +1,5 @@
 use clap::Parser;
+use hyperplonk::keccak::{Binomial4Challenge, PreparedKeccak};
 
 #[cfg(target_family = "unix")]
 #[global_allocator]
@@ -12,6 +13,7 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    let prepared = hyperplonk::prepare_keccak(args.input_size).expect("prepare failed");
+    let prepared: PreparedKeccak<Binomial4Challenge> =
+        hyperplonk::prepare_keccak(args.input_size).expect("prepare failed");
     let _ = hyperplonk::prove_keccak(&prepared);
 }
