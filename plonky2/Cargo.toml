@@ -1,22 +1,23 @@
 [package]
-name = "plonky2_sha256"
+name = "plonky2_circuits"
 version = "0.1.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-plonky2 = "1.0.2"
+plonky2 = "1.1"
 anyhow = { workspace = true }
 itertools = { workspace = true }
 log = { workspace = true }
 sha2 = { workspace = true }
 env_logger = { workspace = true }
 rand = { workspace = true }
-plonky2_u32 = { git = "https://github.com/alxkzmn/plonky2-u32", rev = "167d8a6" }
+plonky2_u32 = { git = "https://github.com/alxkzmn/plonky2-u32", rev = "fcabb02" }
 criterion = { workspace = true }
 utils = { workspace = true }
 clap = { workspace = true }
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 
 [[bench]]
 name = "sha256"
@@ -26,10 +27,18 @@ harness = false
 name = "poseidon"
 harness = false
 
+[[bench]]
+name = "keccak"
+harness = false
+
 [[bin]]
-name = "sha256_no_lookup_mem"
-path = "src/bin/sha256_no_lookup_mem.rs"
+name = "sha256_mem"
+path = "src/bin/sha256_mem.rs"
 
 [[bin]]
 name = "poseidon_mem_plonky2"
 path = "src/bin/poseidon_mem.rs"
+
+[[bin]]
+name = "keccak_mem"
+path = "src/bin/keccak_mem.rs"

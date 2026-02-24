@@ -13,7 +13,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   EXCLUDED_CRATES: "nexus cairo-m"
-  GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+  GITHUB_TOKEN: ${{ secrets.GH_PAT || github.token }}
 
 # ────────────────── 1. Warm‑up build ──────────────────
 jobs:
@@ -69,6 +69,12 @@ jobs:
 
       - name: Format
         run: cargo fmt --all -- --check
+
+      - name: Format excluded crates
+        run: |
+          for crate in $EXCLUDED_CRATES; do
+            cd "$crate" && cargo fmt --all -- --check && cd ..
+          done
 
       - name: Clippy
         run: cargo clippy --workspace --all-targets --all-features

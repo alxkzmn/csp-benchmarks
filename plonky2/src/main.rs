@@ -5,7 +5,7 @@ use plonky2::plonk::circuit_builder::CircuitBuilder;
 use plonky2::plonk::circuit_data::CircuitConfig;
 use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
 use plonky2::util::timing::TimingTree;
-use plonky2_sha256::circuit::{array_to_bits, make_circuits};
+use plonky2_circuits::sha256::circuit::{array_to_bits, make_circuits};
 use sha2::{Digest, Sha256};
 
 pub fn prove_sha256(msg: &[u8]) -> Result<()> {

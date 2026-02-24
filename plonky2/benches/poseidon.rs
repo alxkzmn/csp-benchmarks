@@ -1,7 +1,7 @@
 use plonky2::plonk::config::PoseidonGoldilocksConfig;
-use plonky2::util::serialization::{DefaultGateSerializer, DefaultGeneratorSerializer, Write};
-use plonky2_sha256::PLONKY2_BENCH_PROPERTIES;
-use plonky2_sha256::bench::{poseidon_prepare, prove, verify};
+use plonky2::util::serialization::{DefaultGateSerializer, DefaultGeneratorSerializer};
+use plonky2_circuits::PLONKY2_BENCH_PROPERTIES;
+use plonky2_circuits::bench::{compute_proof_size, poseidon_prepare, prove, verify_proof};
 use utils::harness::ProvingSystem;
 
 const D: usize = 2;
@@ -16,10 +16,7 @@ utils::define_benchmark_harness!(
     poseidon_prepare,
     |(_, _, n_gates)| *n_gates,
     |(circuit_data, pw, _)| { prove(circuit_data, pw.clone()) },
-    |(circuit_data, _pw, _), proof| {
-        let verifier_data = circuit_data.verifier_data();
-        verify(&verifier_data, proof.clone());
-    },
+    verify_proof,
     |(circuit_data, _pw, _)| {
         let gate_serializer = DefaultGateSerializer;
         let common_data_size = circuit_data
@@ -35,9 +32,5 @@ utils::define_benchmark_harness!(
             .len();
         prover_data_size + common_data_size
     },
-    |proof| {
-        let mut buffer = Vec::new();
-        buffer.write_proof(&proof.proof).unwrap();
-        buffer.len()
-    }
+    compute_proof_size
 );

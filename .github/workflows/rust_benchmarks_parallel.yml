@@ -1,7 +1,7 @@
 name: Rust Benchmarks (parallel)
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 on:
@@ -19,7 +19,7 @@ on:
         default: false
         type: boolean
       include_optional:
-        description: "Include the mobile-unfriendly systems (openvm, jolt, sp1)"
+        description: "Include the mobile-unfriendly systems (openvm, sp1)"
         required: false
         default: false
         type: boolean
@@ -32,7 +32,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+  GITHUB_TOKEN: ${{ secrets.GH_PAT || github.token }}
 
 jobs:
   detect-crates:
@@ -111,7 +111,7 @@ jobs:
           if [[ "$INCLUDE_OPTIONAL" != "true" ]]; then
             filtered=()
             for d in "${changed[@]}"; do
-              if [[ ! "$d" =~ ^(openvm|jolt|sp1)(/|$) ]]; then
+              if [[ ! "$d" =~ ^(openvm|sp1)(/|$) ]]; then
                 filtered+=("$d")
               fi
             done
@@ -146,6 +146,7 @@ jobs:
             target
             nexus/target
             cairo-m/target
+            rookie-numbers/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -165,6 +166,12 @@ jobs:
           toolchain: nightly-2025-04-06
           profile: minimal
           components: llvm-tools, rustc-dev, rust-src, rustfmt, clippy
+
+      - name: Install Rookie Numbers toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2025-07-14
+          profile: minimal
 
       - name: Install OpenVM
         if: ${{ github.event.inputs.include_optional == true }}
@@ -188,13 +195,21 @@ jobs:
           if [[ "$INCLUDE_OPTIONAL" == "true" ]]; then
             cargo build --release --workspace
           else
-            cargo build --release --workspace --exclude openvm --exclude jolt --exclude sp1
+            cargo build --release --workspace --exclude openvm --exclude sp1
           fi
 
       - name: Build nexus and cairo-m separately
         run: |
-          cd nexus && cargo build --release && cd ..
-          cd cairo-m && cargo build --release && cd ..
+          CRATES='${{ needs.detect-crates.outputs.crates }}'
+          if echo "$CRATES" | grep -q '"nexus"'; then
+            cd nexus && cargo build --release && cd ..
+          fi
+          if echo "$CRATES" | grep -q '"cairo-m"'; then
+            cd cairo-m && cargo build --release && cd ..
+          fi
+          if echo "$CRATES" | grep -q '"rookie-numbers"'; then
+            cd rookie-numbers && cargo build --release && cd ..
+          fi
 
   bench:
     if: ${{ needs.detect-crates.outputs.crates != '' && needs.detect-crates.outputs.crates != '[]' }}
@@ -222,6 +237,7 @@ jobs:
             target
             nexus/target
             cairo-m/target
+            rookie-numbers/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -242,6 +258,14 @@ jobs:
           toolchain: nightly-2025-04-06
           profile: minimal
           components: llvm-tools, rustc-dev, rust-src, rustfmt, clippy
+
+      - name: Install Rookie Numbers toolchain
+        if: ${{ contains(matrix.crate, 'rookie-numbers') }}
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2025-07-14
+          override: true
+          profile: minimal
 
       - name: Install OpenVM
         if: ${{ contains(matrix.crate, 'openvm') }}
@@ -269,8 +293,18 @@ jobs:
         if: ${{ contains(matrix.crate, 'cairo-m') }}
         uses: ./.github/actions/install-llvm
 
+      - name: Install RISC-V target for stark-v
+        if: ${{ contains(matrix.crate, 'stark-v') }}
+        run: |
+          rustup target add riscv32im-unknown-none-elf
+
+      - name: Install target for Jolt
+        if: ${{ contains(matrix.crate, 'jolt') }}
+        run: |
+          rustup target add riscv64imac-unknown-none-elf
+
       - name: Build and copy excluded memory benchmark binary to workspace target
-        if: ${{ contains(matrix.crate, 'nexus') || contains(matrix.crate, 'cairo-m') }}
+        if: ${{ contains(matrix.crate, 'nexus') || contains(matrix.crate, 'cairo-m') || contains(matrix.crate, 'rookie-numbers') }}
         run: |
           mkdir -p target/release
           if [ "${{ matrix.crate }}" = "nexus" ]; then
@@ -279,6 +313,9 @@ jobs:
           elif [ "${{ matrix.crate }}" = "cairo-m" ]; then
             cd cairo-m && cargo build --release --bin sha256_mem_cairo_m && cd ..
             cp cairo-m/target/release/sha256_mem_cairo_m target/release/
+          elif [ "${{ matrix.crate }}" = "rookie-numbers" ]; then
+            cd rookie-numbers && cargo build --release --bin sha256_mem_rookie_numbers && cd ..
+            cp rookie-numbers/target/release/sha256_mem_rookie_numbers target/release/
           fi
 
       - name: Run benches in ${{ matrix.crate }}
@@ -293,7 +330,7 @@ jobs:
           cargo bench
 
       - name: Copy excluded crates criterion results to workspace target
-        if: ${{ contains(matrix.crate, 'nexus') || contains(matrix.crate, 'cairo-m') }}
+        if: ${{ contains(matrix.crate, 'nexus') || contains(matrix.crate, 'cairo-m') || contains(matrix.crate, 'rookie-numbers') }}
         run: |
           mkdir -p target/criterion
           cp -r ${{ matrix.crate }}/target/criterion/* target/criterion/

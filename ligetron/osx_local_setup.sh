@@ -4,9 +4,8 @@ set -euo pipefail
 # ================================
 # Ligetron macOS end-to-end setup
 # ================================
-# - Installs Homebrew deps (cmake, gmp, mpfr, libomp, llvm, boost, nlohmann-json)
+# - Installs Homebrew deps (cmake, gmp, mpfr, libomp, llvm, boost, nlohmann-json, wabt)
 # - Builds Dawn (WebGPU)
-# - Builds WABT
 # - Installs Emscripten (emsdk)
 # - Builds Ligetron SDK (emscripten)
 # - Builds Ligetron native
@@ -62,7 +61,7 @@ fi
 
 step "Installing build dependencies via Homebrew"
 brew update
-brew install cmake gmp mpfr libomp llvm boost nlohmann-json
+brew install cmake gmp mpfr libomp llvm boost nlohmann-json wabt
 ok "Homebrew deps installed"
 
 # Prefer Xcode clang; if you want brew llvm, uncomment exports below.
@@ -73,7 +72,7 @@ export CXX="${CXX:-clang++}"
 # Build Dawn (WebGPU)
 # -----------------------
 DAWN_DIR="${TP_DIR}/dawn"
-DAWN_COMMIT="41d631c0cbcd46ddc723222fc80890f4305dbc65"
+DAWN_COMMIT="cec4482eccee45696a7c0019e750c77f101ced04"
 
 if [[ ! -d "${DAWN_DIR}" ]]; then
   step "Cloning Dawn"
@@ -99,31 +98,6 @@ popd >/dev/null
 ok "Dawn installed"
 
 # -----------------------
-# Build WABT
-# -----------------------
-WABT_DIR="${TP_DIR}/wabt"
-if [[ ! -d "${WABT_DIR}" ]]; then
-  step "Cloning WABT"
-  git clone https://github.com/WebAssembly/wabt.git "${WABT_DIR}"
-fi
-
-step "Building & installing WABT (clang++)"
-pushd "${WABT_DIR}" >/dev/null
-git submodule update --init
-if [[ "${REINSTALL}" == "1" ]]; then
-  # Clean stale build cache
-  rm -rf build
-fi
-mkdir -p build
-pushd build >/dev/null
-cmake -DCMAKE_CXX_COMPILER="${CXX}" ..
-cmake --build . -j
-sudo cmake --install .
-popd >/dev/null
-popd >/dev/null
-ok "WABT installed"
-
-# -----------------------
 # Install Emscripten SDK
 # -----------------------
 EMSDK_DIR="${TP_DIR}/emsdk"
@@ -146,6 +120,7 @@ ok "emsdk ready (emcmake available)"
 # Ligetron submodule
 # -----------------------
 LIGETRON_DIR="${SCRIPT_DIR}/ligero-prover"
+
 if [[ ! -d "${LIGETRON_DIR}" ]]; then
   step "Ligetron submodule not found; initializing"
   git -C "${REPO_ROOT}" submodule update --init --recursive ligetron/ligero-prover || {
@@ -157,7 +132,7 @@ ok "Ligetron submodule ready"
 # Build Ligetron SDK (Web)
 # -----------------------
 step "Building Ligetron SDK with emscripten"
-pushd "${LIGETRON_DIR}/sdk" >/dev/null
+pushd "${LIGETRON_DIR}/sdk/cpp" >/dev/null
 if [[ "${REINSTALL}" == "1" ]]; then
   # Clean stale build cache
   rm -rf build
@@ -193,6 +168,6 @@ ok "Ligetron native built"
 # -----------------------
 # Run demo prover & verifier
 # -----------------------
-bash ../benchmark.sh --system-dir "${SCRIPT_DIR}"
+bash "${REPO_ROOT}/benchmark.sh" --system-dir "${SCRIPT_DIR}"
 
 ok "All done!"

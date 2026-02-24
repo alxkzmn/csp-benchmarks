@@ -59,6 +59,8 @@ pub enum ProvingSystem {
     Miden,
     CairoM,
     Nexus,
+    Spartan2,
+    RookieNumbers,
     // Extend as needed
 }
 
@@ -79,6 +81,8 @@ impl ProvingSystem {
             ProvingSystem::Miden => "miden",
             ProvingSystem::CairoM => "cairo-m",
             ProvingSystem::Nexus => "nexus",
+            ProvingSystem::Spartan2 => "spartan2",
+            ProvingSystem::RookieNumbers => "rookie-numbers",
         }
     }
 }

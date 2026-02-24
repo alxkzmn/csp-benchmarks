@@ -2,7 +2,8 @@ use std::borrow::Cow;
 use utils::harness::{AuditStatus, BenchProperties};
 
 pub mod bench;
-pub mod circuit;
+pub mod keccak256;
+pub mod sha256;
 
 pub const PLONKY2_BENCH_PROPERTIES: BenchProperties = BenchProperties {
     proving_system: Cow::Borrowed("Plonky2"), // https://github.com/0xPolygonZero/plonky2/blob/main/plonky2/plonky2.pdf
