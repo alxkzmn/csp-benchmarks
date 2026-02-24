@@ -203,6 +203,41 @@ def _series_label(row: Dict[str, Any], include_run_label: bool = False) -> str:
     return label
 
 
+def _clean_optional_str(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    s = str(value).strip()
+    return s if s else None
+
+
+def _normalize_feat(row: Dict[str, Any]) -> Optional[str]:
+    feat = _clean_optional_str(row.get("feat"))
+    if feat:
+        row["feat"] = feat
+    return feat
+
+
+def _derive_name_and_feat_from_system(
+    system_id: Optional[str], feat: Optional[str]
+) -> Tuple[Optional[str], Optional[str]]:
+    if not system_id:
+        return None, feat
+
+    if feat and system_id.endswith(f"_{feat}"):
+        name = system_id[: -(len(feat) + 1)]
+        if name:
+            return name, feat
+
+    # Fallback for schema variants where feat is omitted but system ids
+    # are encoded as "<name>_<feature>".
+    if "_" in system_id:
+        name, inferred_feat = system_id.split("_", 1)
+        if name:
+            return name, (feat or inferred_feat)
+
+    return system_id, feat
+
+
 def _load_rows(path: Path) -> List[Dict[str, Any]]:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
@@ -211,17 +246,76 @@ def _load_rows(path: Path) -> List[Dict[str, Any]]:
     except json.JSONDecodeError as e:
         raise SystemExit(f"Invalid JSON in {path}: {e}") from e
 
-    if not isinstance(raw, list):
-        raise SystemExit(f"Expected a JSON array in {path}, got {type(raw).__name__}")
+    # Legacy schema: list[benchmark_row]
+    if isinstance(raw, list):
+        rows: List[Dict[str, Any]] = []
+        for idx, item in enumerate(raw):
+            if not isinstance(item, dict):
+                raise SystemExit(
+                    f"Expected array of objects in {path}; entry {idx} is {type(item).__name__}"
+                )
+            row = dict(item)
+            _normalize_feat(row)
+            rows.append(row)
+        return rows
 
-    rows: List[Dict[str, Any]] = []
-    for idx, item in enumerate(raw):
-        if not isinstance(item, dict):
+    # New schema: {metadata, systems, measurements}
+    if isinstance(raw, dict):
+        measurements_raw = raw.get("measurements")
+        if not isinstance(measurements_raw, list):
             raise SystemExit(
-                f"Expected array of objects in {path}; entry {idx} is {type(item).__name__}"
+                f"Expected 'measurements' array in {path}; got {type(measurements_raw).__name__}"
             )
-        rows.append(item)
-    return rows
+
+        systems_raw = raw.get("systems", {})
+        if not isinstance(systems_raw, dict):
+            raise SystemExit(
+                f"Expected 'systems' object in {path}; got {type(systems_raw).__name__}"
+            )
+
+        systems: Dict[str, Dict[str, Any]] = {}
+        for system_key, meta in systems_raw.items():
+            if not isinstance(meta, dict):
+                raise SystemExit(
+                    f"Expected systems['{system_key}'] to be an object in {path}; got {type(meta).__name__}"
+                )
+            systems[str(system_key)] = meta
+
+        rows: List[Dict[str, Any]] = []
+        for idx, measurement in enumerate(measurements_raw):
+            if not isinstance(measurement, dict):
+                raise SystemExit(
+                    f"Expected measurements array of objects in {path}; entry {idx} is {type(measurement).__name__}"
+                )
+
+            system_id = _clean_optional_str(measurement.get("system"))
+            row: Dict[str, Any] = {}
+            if system_id and system_id in systems:
+                row.update(systems[system_id])
+            row.update(measurement)
+
+            feat = _normalize_feat(row)
+            name = _clean_optional_str(row.get("name"))
+
+            if not name:
+                derived_name, derived_feat = _derive_name_and_feat_from_system(
+                    system_id, feat
+                )
+                if derived_name:
+                    row["name"] = derived_name
+                if derived_feat:
+                    row["feat"] = derived_feat
+
+            if not _clean_optional_str(row.get("name")) and system_id:
+                row["name"] = system_id
+
+            rows.append(row)
+
+        return rows
+
+    raise SystemExit(
+        f"Unsupported JSON shape in {path}; expected a row array or an object with 'measurements'."
+    )
 
 
 def _ensure_out_dir(out_dir: Path) -> None:
@@ -257,6 +351,24 @@ def _filter_systems(
         name = str(row.get("name", "")).strip()
         series = _series_label(row, include_run_label=False)
         if name in allowed or series in allowed:
+            filtered.append(row)
+    return filtered
+
+
+def _filter_features(
+    rows: List[Dict[str, Any]], features: Optional[Sequence[str]]
+) -> List[Dict[str, Any]]:
+    if not features:
+        return rows
+    allowed = {f.strip() for f in features if f.strip()}
+    if not allowed:
+        return rows
+
+    filtered: List[Dict[str, Any]] = []
+    for row in rows:
+        feat = row.get("feat")
+        feat_str = str(feat).strip() if feat is not None else ""
+        if feat_str in allowed:
             filtered.append(row)
     return filtered
 
@@ -345,7 +457,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--input",
         required=True,
         type=Path,
-        help="Path to a collected benchmarks JSON (array of rows).",
+        help="Path to a collected benchmarks JSON (legacy row-array or new {systems,measurements} object).",
     )
     parser.add_argument(
         "--baseline",
@@ -368,6 +480,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--systems",
         default=None,
         help="Optional comma-separated list of proving systems to include (matches 'name' or 'name (feat)').",
+    )
+    parser.add_argument(
+        "--features",
+        default=None,
+        help="Optional comma-separated list of feature values to include (matches JSON 'feat').",
     )
     parser.add_argument(
         "--input-label",
@@ -406,6 +523,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.systems:
         systems = [s.strip() for s in str(args.systems).split(",") if s.strip()]
 
+    features: Optional[List[str]] = None
+    if args.features:
+        features = [f.strip() for f in str(args.features).split(",") if f.strip()]
+
     def _default_run_label(path: Path) -> str:
         label = path.stem
         if label.startswith("collected_benchmarks_"):
@@ -440,9 +561,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     rows = _filter_rows(rows, targets)
     rows = _filter_systems(rows, systems)
+    rows = _filter_features(rows, features)
 
     if not rows:
-        raise SystemExit("No rows to plot (check --targets/--systems and input files).")
+        raise SystemExit(
+            "No rows to plot (check --targets/--systems/--features and input files)."
+        )
 
     _ensure_out_dir(args.out)
 
