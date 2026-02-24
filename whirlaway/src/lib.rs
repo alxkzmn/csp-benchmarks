@@ -1,12 +1,13 @@
 use std::borrow::Cow;
 
 use anyhow::Result;
-use p3_field::{ExtensionField, TwoAdicField};
+use p3_field::{BasedVectorSpace, ExtensionField, TwoAdicField};
 use utils::harness::{AuditStatus, BenchProperties};
 use whirlaway_sys::AirSettings;
 use whirlaway_sys::circuits::keccak256::{
     Binomial8Challenge, F as KeccakBaseField, Keccak256Circuit, Keccak256Input,
 };
+use whirlaway_sys::evm_codec;
 use whirlaway_sys::hashers::KECCAK_DIGEST_ELEMS;
 use whirlaway_sys::proving_system::{self, KeccakProvingSystemConfig, Prepared};
 
@@ -98,9 +99,11 @@ where
 
 pub fn proof_size<EF>(proof_with_input: &(KeccakProof<EF>, Vec<KeccakBaseField>)) -> usize
 where
-    EF: ExtensionField<KeccakBaseField> + TwoAdicField,
+    EF: ExtensionField<KeccakBaseField> + TwoAdicField + BasedVectorSpace<KeccakBaseField> + Copy,
 {
-    proving_system::proof_size(&proof_with_input.0)
+    let proof_blob =
+        evm_codec::encode_proof_blob_v1_generic(&proof_with_input.1, &proof_with_input.0);
+    evm_codec::encode_calldata_verify_bytes(&proof_blob).len()
 }
 
 pub fn num_constraints<EF>(prepared: &KeccakPrepared<EF>) -> usize

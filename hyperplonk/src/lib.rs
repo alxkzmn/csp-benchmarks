@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use anyhow::Result;
-use p3_field::{ExtensionField, TwoAdicField};
+use p3_field::{BasedVectorSpace, ExtensionField, TwoAdicField};
 use p3_hyperplonk::{HyperPlonkConfig, Proof};
 use p3_koala_bear::KoalaBear;
 use utils::harness::{AuditStatus, BenchProperties};
@@ -69,11 +69,11 @@ pub fn preprocessing_size<E: ExtensionField<Val>>(prepared: &PreparedKeccak<E>) 
     keccak::preprocessing_size(prepared)
 }
 
-pub fn proof_size<E: ExtensionField<Val> + TwoAdicField>(
+pub fn proof_size<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy>(
     proof: &(
         Vec<Val>,
         Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
     ),
 ) -> usize {
-    keccak::proof_size(&proof.1)
+    keccak::proof_size(&proof.0, &proof.1)
 }

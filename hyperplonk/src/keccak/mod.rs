@@ -12,10 +12,10 @@ use anyhow::{Context, Result};
 use p3_challenger::{HashChallenger, SerializingChallenger32};
 use p3_dft::Radix2DitParallel;
 use p3_field::extension::{BinomialExtensionField, QuinticTrinomialExtensionField};
-use p3_field::{ExtensionField, TwoAdicField};
-use p3_hyperplonk::HyperPlonkConfig;
+use p3_field::{BasedVectorSpace, ExtensionField, TwoAdicField};
 use p3_hyperplonk::{
-    ProverInput, VerifierInput, keygen, prove as hyperprove, verify as hyperverify,
+    HyperPlonkConfig, ProverInput, VerifierInput, evm_codec, keygen, prove as hyperprove,
+    verify as hyperverify,
 };
 use p3_keccak::Keccak256Hash;
 use p3_koala_bear::KoalaBear;
@@ -134,10 +134,13 @@ pub fn preprocessing_size<E: ExtensionField<Val>>(prepared: &PreparedKeccak<E>) 
         .unwrap_or(0)
 }
 
-pub fn proof_size<E: ExtensionField<Val> + TwoAdicField>(
+pub fn proof_size<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy>(
+    public_values: &[Val],
     proof: &p3_hyperplonk::Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
 ) -> usize {
-    bincode::serialize(proof).map(|v| v.len()).unwrap_or(0)
+    let public_inputs = [public_values.to_vec()];
+    let proof_blob = evm_codec::encode_proof_blob_v1_generic(&public_inputs, proof);
+    evm_codec::encode_calldata_verify_bytes(&proof_blob).len()
 }
 
 pub fn num_constraints<E: ExtensionField<Val>>(prepared: &PreparedKeccak<E>) -> usize {
