@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use anyhow::Result;
-use p3_field::{BasedVectorSpace, ExtensionField, TwoAdicField};
+use p3_field::{ExtensionField, TwoAdicField};
 use utils::harness::{AuditStatus, BenchProperties};
 use whirlaway_sys::AirSettings;
 use whirlaway_sys::circuits::keccak256::{
@@ -10,20 +10,22 @@ use whirlaway_sys::circuits::keccak256::{
 use whirlaway_sys::hashers::KECCAK_DIGEST_ELEMS;
 use whirlaway_sys::proving_system::{self, KeccakProvingSystemConfig, Prepared};
 
-pub const WHIRLAWAY_BENCH_PROPERTIES: BenchProperties = BenchProperties {
-    proving_system: Cow::Borrowed("Whirlaway"),
-    field_curve: Cow::Borrowed("KoalaBear"),
-    iop: Cow::Borrowed("Whirlaway"),
-    pcs: Some(Cow::Borrowed("WHIR")),
-    arithm: Cow::Borrowed("AIR"),
-    is_zk: false,
-    is_zkvm: false,
-    security_bits: 128,
-    is_pq: true,
-    is_maintained: false,
-    is_audited: AuditStatus::NotAudited,
-    isa: None,
-};
+pub fn whirlaway_bench_properties(security_bits: u64) -> BenchProperties {
+    BenchProperties {
+        security_bits,
+        proving_system: Cow::Borrowed("Whirlaway"),
+        field_curve: Cow::Borrowed("KoalaBear"),
+        iop: Cow::Borrowed("Whirlaway"),
+        pcs: Some(Cow::Borrowed("WHIR")),
+        arithm: Cow::Borrowed("AIR"),
+        is_zk: false,
+        is_zkvm: false,
+        is_pq: true,
+        is_maintained: false,
+        is_audited: AuditStatus::NotAudited,
+        isa: None,
+    }
+}
 
 pub type DefaultExtension = Binomial8Challenge;
 
@@ -37,24 +39,17 @@ pub type KeccakPrepared<EF> = Prepared<
 pub type KeccakProof<EF> =
     proving_system::Proof<Keccak256Circuit<EF>, KeccakBaseField, EF, { KECCAK_DIGEST_ELEMS }>;
 
-pub fn default_air_settings_for_extension<EF>() -> AirSettings
-where
-    EF: ExtensionField<KeccakBaseField> + TwoAdicField,
-{
+pub fn default_air_settings(security_bits: usize) -> AirSettings {
     let mut settings = AirSettings::default();
-    settings.security_bits = if <EF as BasedVectorSpace<KeccakBaseField>>::DIMENSION == 4 {
-        100
-    } else {
-        128
-    };
+    settings.security_bits = security_bits;
     settings
 }
 
-pub fn prepare_keccak<EF>(input_size: usize) -> KeccakPrepared<EF>
+pub fn prepare_keccak<EF>(input_size: usize, security_bits: usize) -> KeccakPrepared<EF>
 where
     EF: ExtensionField<KeccakBaseField> + TwoAdicField,
 {
-    prepare_keccak_with_settings(input_size, default_air_settings_for_extension::<EF>())
+    prepare_keccak_with_settings(input_size, default_air_settings(security_bits))
 }
 
 pub fn prepare_keccak_with_settings<EF>(
@@ -117,24 +112,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::default_air_settings_for_extension;
-    use whirlaway_sys::circuits::keccak256::{
-        Binomial4Challenge, Binomial8Challenge, QuinticChallenge,
-    };
+    use super::default_air_settings;
 
     #[test]
-    fn default_security_bits_follow_extension_policy() {
-        assert_eq!(
-            default_air_settings_for_extension::<Binomial4Challenge>().security_bits,
-            100
-        );
-        assert_eq!(
-            default_air_settings_for_extension::<Binomial8Challenge>().security_bits,
-            128
-        );
-        assert_eq!(
-            default_air_settings_for_extension::<QuinticChallenge>().security_bits,
-            128
-        );
+    fn default_security_bits_are_configurable() {
+        assert_eq!(default_air_settings(96).security_bits, 96);
+        assert_eq!(default_air_settings(128).security_bits, 128);
     }
 }

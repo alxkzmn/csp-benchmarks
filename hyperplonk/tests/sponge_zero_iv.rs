@@ -17,7 +17,8 @@ type Val = KoalaBear;
 /// malicious prover using a non-standard IV.
 #[test]
 fn tampered_iv_capacity_bit_is_rejected() {
-    let prepared = hyperplonk::prepare_keccak::<Binomial4Challenge>(128).expect("prepare failed");
+    let prepared =
+        hyperplonk::prepare_keccak::<Binomial4Challenge>(128, 100).expect("prepare failed");
 
     // Generate an honest trace.
     let (mut trace, digest_limbs) =

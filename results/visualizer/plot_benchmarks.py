@@ -188,12 +188,13 @@ def _configure_log_y_axis(
 
 
 def _series_label(row: Dict[str, Any], include_run_label: bool = False) -> str:
-    name = str(row.get("name", ""))
+    name = str(row.get("name", "")).strip()
     feat = row.get("feat")
-    if feat is None or feat == "":
+    feat_str = str(feat).strip() if feat is not None else ""
+    if not feat_str:
         label = name
     else:
-        label = f"{name}[{feat}]"
+        label = f"{name} ({feat_str})"
 
     if include_run_label:
         run_label = str(row.get("__run_label", "")).strip()
@@ -253,7 +254,7 @@ def _filter_systems(
 
     filtered: List[Dict[str, Any]] = []
     for row in rows:
-        name = str(row.get("name", ""))
+        name = str(row.get("name", "")).strip()
         series = _series_label(row, include_run_label=False)
         if name in allowed or series in allowed:
             filtered.append(row)
@@ -366,7 +367,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--systems",
         default=None,
-        help="Optional comma-separated list of proving systems to include (matches 'name' or 'name[feat]').",
+        help="Optional comma-separated list of proving systems to include (matches 'name' or 'name (feat)').",
     )
     parser.add_argument(
         "--input-label",

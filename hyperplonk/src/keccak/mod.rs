@@ -50,15 +50,15 @@ pub struct PreparedKeccak<E: ExtensionField<Val>> {
     pub vk: p3_hyperplonk::VerifyingKey,
 }
 
-pub fn make_config<E: ExtensionField<Val>>() -> HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>
-{
+pub fn make_config<E: ExtensionField<Val>>(
+    security_bits: usize,
+) -> HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger> {
     let dft = Dft::<Val>::default();
-    let security_level = if E::DIMENSION == 4 { 100 } else { 128 };
     let pow_bits = 20;
     let field_hash = FieldHash::default();
     let compress = Compress::default();
     let whir_params = ProtocolParameters {
-        security_level,
+        security_level: security_bits,
         pow_bits,
         folding_factor: FoldingFactor::Constant(4),
         merkle_hash: field_hash,

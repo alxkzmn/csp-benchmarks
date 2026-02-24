@@ -21,27 +21,28 @@ pub mod test_utils {
 
 type Val = KoalaBear;
 
-pub const HYPERPLONK_BENCH_PROPERTIES: BenchProperties = BenchProperties {
-    proving_system: Cow::Borrowed("HyperPlonk"),
-    field_curve: Cow::Borrowed("KoalaBear"),
-    iop: Cow::Borrowed("HyperPlonk"),
-    pcs: Some(Cow::Borrowed("WHIR")),
-    arithm: Cow::Borrowed("AIR"),
-    is_zk: false,
-    is_zkvm: false,
-    // p3-playground example uses security_level=100 as a placeholder.
-    security_bits: 100,
-    // WHIR is Keccak-based (hash-based PCS); treat as PQ for this benchmark suite.
-    is_pq: true,
-    is_maintained: true,
-    is_audited: AuditStatus::NotAudited,
-    isa: None,
-};
+pub fn hyperplonk_bench_properties(security_bits: u64) -> BenchProperties {
+    BenchProperties {
+        security_bits,
+        proving_system: Cow::Borrowed("HyperPlonk"),
+        field_curve: Cow::Borrowed("KoalaBear"),
+        iop: Cow::Borrowed("HyperPlonk"),
+        pcs: Some(Cow::Borrowed("WHIR")),
+        arithm: Cow::Borrowed("AIR"),
+        is_zk: false,
+        is_zkvm: false,
+        is_pq: true,
+        is_maintained: true,
+        is_audited: AuditStatus::NotAudited,
+        isa: None,
+    }
+}
 
 pub fn prepare_keccak<E: ExtensionField<Val>>(
     input_size: usize,
+    security_bits: usize,
 ) -> Result<keccak::PreparedKeccak<E>> {
-    let config = make_config::<E>();
+    let config = make_config::<E>(security_bits);
     keccak::prepare(input_size, config)
 }
 

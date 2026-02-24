@@ -5,14 +5,14 @@ use hyperplonk::{
     proof_size, prove_keccak, verify_keccak,
 };
 
-const SECURITY_BITS: usize = 128;
-const FEATURE: &str = "quintic_128";
+const SECURITY_BITS: usize = 100;
+const FEATURE: &str = "quintic_100";
 
 utils::define_benchmark_harness!(
     BenchTarget::Keccak,
     ProvingSystem::HyperPlonk,
     Some(FEATURE),
-    "keccak_mem_hyperplonk_5",
+    "keccak_mem_hyperplonk_5_100",
     hyperplonk_bench_properties(SECURITY_BITS as u64),
     |input_size| prepare_keccak::<QuinticChallenge>(input_size, SECURITY_BITS)
         .expect("failed to prepare keccak sponge AIR"),

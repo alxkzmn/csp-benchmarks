@@ -187,6 +187,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "air"
+version = "0.1.0"
+dependencies = [
+ "air-test-utils",
+ "keccak_air",
+ "p3-air 0.4.2",
+ "p3-challenger 0.4.2",
+ "p3-dft 0.4.2",
+ "p3-field 0.4.2",
+ "p3-koala-bear 0.4.2",
+ "p3-matrix 0.4.2",
+ "p3-poseidon2 0.4.2",
+ "p3-symmetric 0.4.2",
+ "p3-uni-stark 0.4.2",
+ "rand 0.8.5",
+ "rayon",
+ "serde",
+ "sumcheck 0.1.0",
+ "tracing",
+ "whir-p3",
+ "whirlaway-utils",
+]
+
+[[package]]
+name = "air-test-utils"
+version = "0.1.0"
+dependencies = [
+ "air",
+ "keccak_air",
+ "p3-air 0.4.2",
+ "p3-challenger 0.4.2",
+ "p3-field 0.4.2",
+ "p3-koala-bear 0.4.2",
+ "p3-matrix 0.4.2",
+ "p3-symmetric 0.4.2",
+ "rand 0.8.5",
+ "whir-p3",
+]
+
+[[package]]
 name = "allocative"
 version = "0.3.4"
 source = "git+https://github.com/facebookexperimental/allocative?rev=85b773d85d526d068ce94724ff7a7b81203fc95e#85b773d85d526d068ce94724ff7a7b81203fc95e"
@@ -1864,7 +1904,7 @@ dependencies = [
  "poly_commit",
  "polynomials",
  "serdes",
- "sumcheck",
+ "sumcheck 0.1.0 (git+https://github.com/PolyhedraZK/Expander?branch=main)",
  "tokio",
  "transcript",
  "utils 0.1.0 (git+https://github.com/PolyhedraZK/Expander?branch=main)",
@@ -2229,7 +2269,7 @@ dependencies = [
  "cc",
  "cfg-if",
  "constant_time_eq",
- "cpufeatures",
+ "cpufeatures 0.2.17",
 ]
 
 [[package]]
@@ -2616,7 +2656,18 @@ checksum = "c3613f74bd2eac03dad61bd53dbe620703d4371614fe0bc3b9f04dd36fe4e818"
 dependencies = [
  "cfg-if",
  "cipher",
- "cpufeatures",
+ "cpufeatures 0.2.17",
+]
+
+[[package]]
+name = "chacha20"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f8d983286843e49675a4b7a2d174efe136dc93a18d69130dd18198a6c167601"
+dependencies = [
+ "cfg-if",
+ "cpufeatures 0.3.0",
+ "rand_core 0.10.0",
 ]
 
 [[package]]
@@ -2626,7 +2677,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10cd79432192d1c0f4e1a0fef9527696cc039165d729fb41b3f4f4f354c2dc35"
 dependencies = [
  "aead",
- "chacha20",
+ "chacha20 0.9.1",
  "cipher",
  "poly1305",
  "zeroize",
@@ -2966,7 +3017,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bb320cac8a0750d7f25280aa97b09c26edfe161164238ecbbb31092b079e735"
 dependencies = [
  "cfg-if",
- "cpufeatures",
+ "cpufeatures 0.2.17",
  "proptest",
  "serde_core",
 ]
@@ -3127,6 +3178,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cpufeatures"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b2a41393f66f16b0823bb79094d54ac5fbd34ab292ddafb9a0456ac9f87d201"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "cranelift-bitset"
 version = "0.121.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3255,7 +3315,7 @@ dependencies = [
  "polynomials",
  "rand 0.8.5",
  "serdes",
- "sumcheck",
+ "sumcheck 0.1.0 (git+https://github.com/PolyhedraZK/Expander?branch=main)",
  "thiserror 1.0.69",
  "transcript",
 ]
@@ -3348,7 +3408,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fb8b7c4503de7d6ae7b42ab72a5a59857b4c937ec27a3d4539dba95b5ab2be"
 dependencies = [
  "cfg-if",
- "cpufeatures",
+ "cpufeatures 0.2.17",
  "curve25519-dalek-derive",
  "digest 0.10.7",
  "fiat-crypto",
@@ -4315,7 +4375,7 @@ dependencies = [
  "serde_json",
  "serdes",
  "shared_memory",
- "sumcheck",
+ "sumcheck 0.1.0 (git+https://github.com/PolyhedraZK/Expander?branch=main)",
  "tiny-keccak",
  "tokio",
  "transcript",
@@ -4768,6 +4828,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "r-efi",
+ "rand_core 0.10.0",
  "wasip2",
  "wasip3",
 ]
@@ -4851,7 +4912,7 @@ dependencies = [
  "rayon",
  "serdes",
  "sha2",
- "sumcheck",
+ "sumcheck 0.1.0 (git+https://github.com/PolyhedraZK/Expander?branch=main)",
  "thiserror 1.0.69",
  "transcript",
  "utils 0.1.0 (git+https://github.com/PolyhedraZK/Expander?branch=main)",
@@ -6213,7 +6274,7 @@ version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ecc2af9a1119c51f12a14607e783cb977bde58bc069ff0c3da1095e635d70654"
 dependencies = [
- "cpufeatures",
+ "cpufeatures 0.2.17",
 ]
 
 [[package]]
@@ -6234,6 +6295,26 @@ checksum = "ce2bd4c29270e724d3eaadf7bdc8700af4221fc0ed771b855eadcd1b98d52851"
 dependencies = [
  "primitive-types 0.10.1",
  "tiny-keccak",
+]
+
+[[package]]
+name = "keccak_air"
+version = "0.1.0"
+dependencies = [
+ "p3-air 0.4.2",
+ "p3-field 0.4.2",
+ "p3-goldilocks 0.4.2",
+ "p3-keccak 0.4.2",
+ "p3-keccak-air 0.4.2",
+ "p3-matrix 0.4.2",
+ "p3-maybe-rayon 0.4.2",
+ "p3-symmetric 0.4.2",
+ "p3-util 0.4.2",
+ "rand 0.10.0",
+ "sha3",
+ "tracing",
+ "tracing-forest",
+ "tracing-subscriber 0.3.22",
 ]
 
 [[package]]
@@ -9584,6 +9665,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "p3-uni-stark"
+version = "0.4.2"
+source = "git+https://github.com/Plonky3/Plonky3?rev=c38eb05#c38eb05221a310a0010da885cb620dafa247d584"
+dependencies = [
+ "itertools 0.14.0",
+ "p3-air 0.4.2",
+ "p3-challenger 0.4.2",
+ "p3-commit 0.4.2",
+ "p3-dft 0.4.2",
+ "p3-field 0.4.2",
+ "p3-matrix 0.4.2",
+ "p3-maybe-rayon 0.4.2",
+ "p3-util 0.4.2",
+ "serde",
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
 name = "p3-util"
 version = "0.1.0"
 source = "git+https://github.com/Plonky3/Plonky3.git?rev=539bbc84085efb609f4f62cb03cf49588388abdb#539bbc84085efb609f4f62cb03cf49588388abdb"
@@ -9989,7 +10089,7 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8159bd90725d2df49889a078b54f4f79e87f1f8a8444194cdca81d38f5393abf"
 dependencies = [
- "cpufeatures",
+ "cpufeatures 0.2.17",
  "opaque-debug",
  "universal-hash",
 ]
@@ -10011,7 +10111,7 @@ dependencies = [
  "rand 0.8.5",
  "rayon",
  "serdes",
- "sumcheck",
+ "sumcheck 0.1.0 (git+https://github.com/PolyhedraZK/Expander?branch=main)",
  "thiserror 1.0.69",
  "transcript",
  "transpose",
@@ -10592,6 +10692,8 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc266eb313df6c5c09c1c7b1fbe2510961e5bcd3add930c1e31f7ed9da0feff8"
 dependencies = [
+ "chacha20 0.10.0",
+ "getrandom 0.4.1",
  "rand_core 0.10.0",
 ]
 
@@ -12076,7 +12178,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3bf829a2d51ab4a5ddf1352d8470c140cadc8301b2ae1789db023f01cedd6ba"
 dependencies = [
  "cfg-if",
- "cpufeatures",
+ "cpufeatures 0.2.17",
  "digest 0.10.7",
 ]
 
@@ -12087,7 +12189,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283"
 dependencies = [
  "cfg-if",
- "cpufeatures",
+ "cpufeatures 0.2.17",
  "digest 0.10.7",
 ]
 
@@ -13021,6 +13123,24 @@ name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
+
+[[package]]
+name = "sumcheck"
+version = "0.1.0"
+dependencies = [
+ "p3-air 0.4.2",
+ "p3-challenger 0.4.2",
+ "p3-field 0.4.2",
+ "p3-koala-bear 0.4.2",
+ "p3-matrix 0.4.2",
+ "p3-poseidon2 0.4.2",
+ "p3-symmetric 0.4.2",
+ "rand 0.8.5",
+ "rayon",
+ "tracing",
+ "whir-p3",
+ "whirlaway-utils",
+]
 
 [[package]]
 name = "sumcheck"
@@ -14632,6 +14752,64 @@ dependencies = [
  "serde",
  "thiserror 2.0.18",
  "tracing",
+]
+
+[[package]]
+name = "whirlaway"
+version = "0.1.0"
+dependencies = [
+ "air",
+ "bincode 1.3.3",
+ "criterion",
+ "keccak_air",
+ "p3-air 0.4.2",
+ "p3-baby-bear 0.4.2",
+ "p3-challenger 0.4.2",
+ "p3-field 0.4.2",
+ "p3-keccak 0.4.2",
+ "p3-koala-bear 0.4.2",
+ "p3-matrix 0.4.2",
+ "p3-poseidon2 0.4.2",
+ "p3-poseidon2-air 0.4.2",
+ "p3-symmetric 0.4.2",
+ "p3-uni-stark 0.4.2",
+ "rand 0.10.0",
+ "serde",
+ "sha3",
+ "sumcheck 0.1.0",
+ "tracing",
+ "tracing-forest",
+ "tracing-subscriber 0.3.22",
+ "whir-p3",
+ "whirlaway-utils",
+]
+
+[[package]]
+name = "whirlaway-bench"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "criterion",
+ "p3-field 0.4.2",
+ "utils 0.1.0",
+ "whir-p3",
+ "whirlaway",
+]
+
+[[package]]
+name = "whirlaway-utils"
+version = "0.1.0"
+dependencies = [
+ "p3-air 0.4.2",
+ "p3-challenger 0.4.2",
+ "p3-field 0.4.2",
+ "p3-koala-bear 0.4.2",
+ "p3-matrix 0.4.2",
+ "rand 0.8.5",
+ "rayon",
+ "tracing",
+ "whir-p3",
 ]
 
 [[package]]

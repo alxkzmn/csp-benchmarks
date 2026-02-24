@@ -56,6 +56,10 @@ name = "keccak_5"
 harness = false
 
 [[bench]]
+name = "keccak_5_100"
+harness = false
+
+[[bench]]
 name = "keccak_8"
 harness = false
 
@@ -66,6 +70,10 @@ path = "src/bin/keccak_mem_4.rs"
 [[bin]]
 name = "keccak_mem_hyperplonk_5"
 path = "src/bin/keccak_mem_5.rs"
+
+[[bin]]
+name = "keccak_mem_hyperplonk_5_100"
+path = "src/bin/keccak_mem_5_100.rs"
 
 [[bin]]
 name = "keccak_mem_hyperplonk_8"

@@ -4,18 +4,18 @@ use whirlaway::{
     num_constraints, prepare_keccak, preprocessing_size, proof_size, prove_keccak, verify_keccak,
     whirlaway_bench_properties,
 };
-use whirlaway_sys::circuits::keccak256::Binomial8Challenge;
+use whirlaway_sys::circuits::keccak256::QuinticChallenge;
 
-const SECURITY_BITS: usize = 128;
-const FEATURE: &str = "binomial8_128";
+const SECURITY_BITS: usize = 100;
+const FEATURE: &str = "quintic_100";
 
 utils::define_benchmark_harness!(
     BenchTarget::Keccak,
     ProvingSystem::Whirlaway,
     Some(FEATURE),
-    "keccak_mem_whirlaway_8",
+    "keccak_mem_whirlaway_5",
     whirlaway_bench_properties(SECURITY_BITS as u64),
-    |input_size| { prepare_keccak::<Binomial8Challenge>(input_size, SECURITY_BITS) },
+    |input_size| { prepare_keccak::<QuinticChallenge>(input_size, SECURITY_BITS) },
     num_constraints,
     prove_keccak,
     |prepared, proof| verify_keccak(prepared, proof).expect("verification failed"),
