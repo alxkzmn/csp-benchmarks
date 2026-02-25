@@ -2,6 +2,12 @@
 
 This file is a pointer; see `.github/copilot-instructions.md` for the canonical, up-to-date instructions.
 
+## Active scope for current benchmark work
+
+- Focus only on **WHIR-based** proving systems: `hyperplonk` and `whirlaway`.
+- Use **ProveKit** as the baseline comparator.
+- Optimize for the **smallest on-chain verifier** (proof/calldata size + verifier complexity) while preserving **client-side feasibility** (proving time and RAM).
+
 ## Golden rules
 
 - **YOU MUST** read `CONTRIBUTING.md` before changing benchmarks.
