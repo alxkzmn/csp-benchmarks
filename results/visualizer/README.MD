@@ -38,6 +38,19 @@ python3 plot_benchmarks.py \
 	--out out \
 	--log-y
 
+# Exclude a feature globally (e.g., drop quintic_100 from all systems)
+python3 plot_benchmarks.py \
+	--input ../multiproof.json \
+	--exclude-features quintic_100 \
+	--out out
+
+# Exclude multiple features at once
+python3 plot_benchmarks.py \
+	--input ../multiproof.json \
+	--exclude-features quintic_100,binomial4_100 \
+	--exclude-features binomial8_128 \
+	--out out
+
 # Place legend outside the plot area (may squash axes if labels are long)
 python3 plot_benchmarks.py \
 	--input ../collected_benchmarks_univariate_skip.json \
@@ -46,4 +59,10 @@ python3 plot_benchmarks.py \
 	--out out \
 	--log-y \
 	--legend-outside
+```
+
+# How to obtain the latest best charts:
+
+```
+python3 plot_benchmarks.py --input ../multiproof.json --log-y --exclude-features quintic_100,binomial8_128
 ```

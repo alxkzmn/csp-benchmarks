@@ -238,6 +238,15 @@ def _derive_name_and_feat_from_system(
     return system_id, feat
 
 
+def _parse_csv_values(values: Optional[Sequence[str]]) -> Optional[List[str]]:
+    if not values:
+        return None
+    parsed: List[str] = []
+    for value in values:
+        parsed.extend(v.strip() for v in str(value).split(",") if v.strip())
+    return parsed or None
+
+
 def _load_rows(path: Path) -> List[Dict[str, Any]]:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
@@ -373,6 +382,25 @@ def _filter_features(
     return filtered
 
 
+def _exclude_features(
+    rows: List[Dict[str, Any]], excluded_features: Optional[Sequence[str]]
+) -> List[Dict[str, Any]]:
+    if not excluded_features:
+        return rows
+    blocked = {f.strip() for f in excluded_features if f.strip()}
+    if not blocked:
+        return rows
+
+    filtered: List[Dict[str, Any]] = []
+    for row in rows:
+        feat = row.get("feat")
+        feat_str = str(feat).strip() if feat is not None else ""
+        if feat_str in blocked:
+            continue
+        filtered.append(row)
+    return filtered
+
+
 def _plot_metric(
     *,
     target: str,
@@ -483,8 +511,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     parser.add_argument(
         "--features",
+        action="append",
         default=None,
-        help="Optional comma-separated list of feature values to include (matches JSON 'feat').",
+        help="Optional feature values to include (matches JSON 'feat'); can be passed multiple times and/or comma-separated.",
+    )
+    parser.add_argument(
+        "--exclude-features",
+        action="append",
+        default=None,
+        help="Optional feature values to exclude (matches JSON 'feat'); can be passed multiple times and/or comma-separated.",
     )
     parser.add_argument(
         "--input-label",
@@ -523,9 +558,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.systems:
         systems = [s.strip() for s in str(args.systems).split(",") if s.strip()]
 
-    features: Optional[List[str]] = None
-    if args.features:
-        features = [f.strip() for f in str(args.features).split(",") if f.strip()]
+    features = _parse_csv_values(args.features)
+    excluded_features = _parse_csv_values(args.exclude_features)
 
     def _default_run_label(path: Path) -> str:
         label = path.stem
@@ -562,10 +596,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     rows = _filter_rows(rows, targets)
     rows = _filter_systems(rows, systems)
     rows = _filter_features(rows, features)
+    rows = _exclude_features(rows, excluded_features)
 
     if not rows:
         raise SystemExit(
-            "No rows to plot (check --targets/--systems/--features and input files)."
+            "No rows to plot (check --targets/--systems/--features/--exclude-features and input files)."
         )
 
     _ensure_out_dir(args.out)
