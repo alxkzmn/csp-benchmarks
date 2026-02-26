@@ -19,7 +19,7 @@ tracing = { workspace = true }
 utils = { workspace = true }
 
 # HyperPlonk
-p3-hyperplonk = { path = "./p3-playground/hyperplonk", features = ["bench"] }
+p3-hyperplonk = { path = "./p3-playground/hyperplonk", features = ["bench", "keccak_no_prefix"] }
 p3-whir = { path = "./p3-playground/whir", features = ["parallel"] }
 
 # Plonky3 deps (pulled via the p3-playground workspace)

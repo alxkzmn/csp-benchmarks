@@ -13,7 +13,7 @@ clap = { version = "4.5.20", features = ["derive", "env"] }
 criterion = "0.5.1"
 utils = { path = "../utils" }
 
-whirlaway_sys = { package = "whirlaway", path = "Whirlaway/whirlaway" }
+whirlaway_sys = { package = "whirlaway", path = "Whirlaway/whirlaway",  features = ["keccak_no_prefix"] }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "c38eb05" }
 
 [[bench]]
