@@ -8,7 +8,10 @@ use whirlaway_sys::circuits::keccak256::{
     Binomial8Challenge, F as KeccakBaseField, Keccak256Circuit, Keccak256Input,
 };
 use whirlaway_sys::evm_codec;
-use whirlaway_sys::hashers::KECCAK_DIGEST_ELEMS;
+use whirlaway_sys::hashers::{
+    KECCAK_DIGEST_ELEMS, effective_digest_bytes_for_security_bits,
+    resolve_effective_merkle_security_bits,
+};
 use whirlaway_sys::proving_system::{self, KeccakProvingSystemConfig, Prepared};
 
 pub fn whirlaway_bench_properties(security_bits: u64) -> BenchProperties {
@@ -41,8 +44,16 @@ pub type KeccakProof<EF> =
     proving_system::Proof<Keccak256Circuit<EF>, KeccakBaseField, EF, { KECCAK_DIGEST_ELEMS }>;
 
 pub fn default_air_settings(security_bits: usize) -> AirSettings {
+    default_air_settings_with_merkle_override(security_bits, None)
+}
+
+pub fn default_air_settings_with_merkle_override(
+    security_bits: usize,
+    merkle_security_bits_override: Option<usize>,
+) -> AirSettings {
     let mut settings = AirSettings::default();
     settings.security_bits = security_bits;
+    settings.merkle_security_bits_override = merkle_security_bits_override;
     settings
 }
 
@@ -51,6 +62,20 @@ where
     EF: ExtensionField<KeccakBaseField> + TwoAdicField,
 {
     prepare_keccak_with_settings(input_size, default_air_settings(security_bits))
+}
+
+pub fn prepare_keccak_with_merkle_override<EF>(
+    input_size: usize,
+    security_bits: usize,
+    merkle_security_bits_override: Option<usize>,
+) -> KeccakPrepared<EF>
+where
+    EF: ExtensionField<KeccakBaseField> + TwoAdicField,
+{
+    prepare_keccak_with_settings(
+        input_size,
+        default_air_settings_with_merkle_override(security_bits, merkle_security_bits_override),
+    )
 }
 
 pub fn prepare_keccak_with_settings<EF>(
@@ -104,12 +129,7 @@ pub fn proof_size<EF>(
 where
     EF: ExtensionField<KeccakBaseField> + TwoAdicField + BasedVectorSpace<KeccakBaseField> + Copy,
 {
-    let proof_blob = evm_codec::encode_proof_blob_v3_generic(
-        &proof_with_input.1,
-        &proof_with_input.0,
-        evm_codec::effective_digest_bytes_for_v3_security_bits(security_bits),
-    );
-    evm_codec::encode_calldata_verify_bytes(&proof_blob).len()
+    proof_size_with_merkle_override(proof_with_input, security_bits, None)
 }
 
 pub fn proof_size_with_security_bits<EF>(
@@ -119,7 +139,27 @@ pub fn proof_size_with_security_bits<EF>(
 where
     EF: ExtensionField<KeccakBaseField> + TwoAdicField + BasedVectorSpace<KeccakBaseField> + Copy,
 {
-    proof_size(proof_with_input, security_bits)
+    proof_size_with_merkle_override(proof_with_input, security_bits, None)
+}
+
+pub fn proof_size_with_merkle_override<EF>(
+    proof_with_input: &(KeccakProof<EF>, Vec<KeccakBaseField>),
+    security_bits: usize,
+    merkle_security_bits_override: Option<usize>,
+) -> usize
+where
+    EF: ExtensionField<KeccakBaseField> + TwoAdicField + BasedVectorSpace<KeccakBaseField> + Copy,
+{
+    let effective_merkle_security_bits =
+        resolve_effective_merkle_security_bits(security_bits, merkle_security_bits_override);
+    let effective_digest_bytes =
+        effective_digest_bytes_for_security_bits(effective_merkle_security_bits);
+    let proof_blob = evm_codec::encode_proof_blob_v3_generic(
+        &proof_with_input.1,
+        &proof_with_input.0,
+        effective_digest_bytes,
+    );
+    evm_codec::encode_calldata_verify_bytes(&proof_blob).len()
 }
 
 pub fn proof_size_v2<EF>(proof_with_input: &(KeccakProof<EF>, Vec<KeccakBaseField>)) -> usize
@@ -149,11 +189,19 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::default_air_settings;
+    use super::{default_air_settings, default_air_settings_with_merkle_override};
 
     #[test]
     fn default_security_bits_are_configurable() {
         assert_eq!(default_air_settings(96).security_bits, 96);
         assert_eq!(default_air_settings(128).security_bits, 128);
+    }
+
+    #[test]
+    fn default_merkle_override_is_configurable() {
+        assert_eq!(
+            default_air_settings_with_merkle_override(128, Some(80)).merkle_security_bits_override,
+            Some(80)
+        );
     }
 }

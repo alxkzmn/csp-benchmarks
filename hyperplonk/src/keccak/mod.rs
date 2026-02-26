@@ -53,10 +53,21 @@ pub struct PreparedKeccak<E: ExtensionField<Val>> {
 pub fn make_config<E: ExtensionField<Val>>(
     security_bits: usize,
 ) -> HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger> {
+    make_config_with_merkle_override::<E>(security_bits, None)
+}
+
+pub fn make_config_with_merkle_override<E: ExtensionField<Val>>(
+    security_bits: usize,
+    merkle_security_bits_override: Option<usize>,
+) -> HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger> {
     let dft = Dft::<Val>::default();
     let pow_bits = 20;
-    let field_hash = FieldHash::for_security_bits(security_bits);
-    let compress = Compress::for_security_bits(security_bits);
+    let effective_merkle_security_bits = p3_whir::resolve_effective_merkle_security_bits(
+        security_bits,
+        merkle_security_bits_override,
+    );
+    let field_hash = FieldHash::for_security_bits(effective_merkle_security_bits);
+    let compress = Compress::for_security_bits(effective_merkle_security_bits);
     let whir_params = ProtocolParameters {
         security_level: security_bits,
         pow_bits,
@@ -139,12 +150,26 @@ pub fn proof_size<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> 
     proof: &p3_hyperplonk::Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
     security_bits: usize,
 ) -> usize {
+    proof_size_with_merkle_override(public_values, proof, security_bits, None)
+}
+
+pub fn proof_size_with_merkle_override<
+    E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy,
+>(
+    public_values: &[Val],
+    proof: &p3_hyperplonk::Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+    security_bits: usize,
+    merkle_security_bits_override: Option<usize>,
+) -> usize {
     let public_inputs = [public_values.to_vec()];
-    let proof_blob = evm_codec::encode_proof_blob_v3_generic(
-        &public_inputs,
-        proof,
-        p3_whir::effective_digest_bytes_for_security_bits(security_bits),
+    let effective_merkle_security_bits = p3_whir::resolve_effective_merkle_security_bits(
+        security_bits,
+        merkle_security_bits_override,
     );
+    let effective_digest_bytes =
+        p3_whir::effective_digest_bytes_for_security_bits(effective_merkle_security_bits);
+    let proof_blob =
+        evm_codec::encode_proof_blob_v3_generic(&public_inputs, proof, effective_digest_bytes);
     evm_codec::encode_calldata_verify_bytes(&proof_blob).len()
 }
 

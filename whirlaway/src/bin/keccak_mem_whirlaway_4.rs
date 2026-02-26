@@ -11,6 +11,10 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    let prepared = whirlaway::prepare_keccak::<Binomial4Challenge>(args.input_size, SECURITY_BITS);
+    let prepared = whirlaway::prepare_keccak_with_merkle_override::<Binomial4Challenge>(
+        args.input_size,
+        SECURITY_BITS,
+        Some(80),
+    );
     let _ = whirlaway::prove_keccak(&prepared);
 }

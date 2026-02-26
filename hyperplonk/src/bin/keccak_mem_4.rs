@@ -16,6 +16,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
     let prepared: PreparedKeccak<Binomial4Challenge> =
-        hyperplonk::prepare_keccak(args.input_size, SECURITY_BITS).expect("prepare failed");
+        hyperplonk::prepare_keccak_with_merkle_override(args.input_size, SECURITY_BITS, Some(80))
+            .expect("prepare failed");
     let _ = hyperplonk::prove_keccak(&prepared);
 }

@@ -6,7 +6,9 @@ use p3_hyperplonk::{HyperPlonkConfig, Proof};
 use p3_koala_bear::KoalaBear;
 use utils::harness::{AuditStatus, BenchProperties};
 
-use crate::keccak::{Challenger, Dft, Pcs, PreparedKeccak, make_config};
+use crate::keccak::{
+    Challenger, Dft, Pcs, PreparedKeccak, make_config, make_config_with_merkle_override,
+};
 
 pub mod keccak;
 
@@ -46,6 +48,16 @@ pub fn prepare_keccak<E: ExtensionField<Val>>(
     keccak::prepare(input_size, config)
 }
 
+pub fn prepare_keccak_with_merkle_override<E: ExtensionField<Val>>(
+    input_size: usize,
+    security_bits: usize,
+    merkle_security_bits_override: Option<usize>,
+) -> Result<keccak::PreparedKeccak<E>> {
+    let config =
+        make_config_with_merkle_override::<E>(security_bits, merkle_security_bits_override);
+    keccak::prepare(input_size, config)
+}
+
 pub fn prove_keccak<E: ExtensionField<Val> + TwoAdicField>(
     prepared: &PreparedKeccak<E>,
 ) -> Result<(
@@ -76,7 +88,25 @@ pub fn proof_size<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> 
     ),
     security_bits: usize,
 ) -> usize {
-    keccak::proof_size(&proof.0, &proof.1, security_bits)
+    proof_size_with_merkle_override(proof, security_bits, None)
+}
+
+pub fn proof_size_with_merkle_override<
+    E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy,
+>(
+    proof: &(
+        Vec<Val>,
+        Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+    ),
+    security_bits: usize,
+    merkle_security_bits_override: Option<usize>,
+) -> usize {
+    keccak::proof_size_with_merkle_override(
+        &proof.0,
+        &proof.1,
+        security_bits,
+        merkle_security_bits_override,
+    )
 }
 
 pub fn proof_size_v2<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy>(
