@@ -1,8 +1,8 @@
 use utils::harness::ProvingSystem;
 
 use whirlaway::{
-    num_constraints, prepare_keccak, preprocessing_size, proof_size, prove_keccak, verify_keccak,
-    whirlaway_bench_properties,
+    num_constraints, prepare_keccak, preprocessing_size, proof_size_with_security_bits,
+    prove_keccak, verify_keccak, whirlaway_bench_properties,
 };
 use whirlaway_sys::circuits::keccak256::Binomial4Challenge;
 
@@ -20,5 +20,5 @@ utils::define_benchmark_harness!(
     prove_keccak,
     |prepared, proof| verify_keccak(prepared, proof).expect("verification failed"),
     preprocessing_size,
-    proof_size
+    |proof| proof_size_with_security_bits(proof, SECURITY_BITS)
 );

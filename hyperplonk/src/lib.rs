@@ -74,6 +74,25 @@ pub fn proof_size<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> 
         Vec<Val>,
         Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
     ),
+    security_bits: usize,
 ) -> usize {
-    keccak::proof_size(&proof.0, &proof.1)
+    keccak::proof_size(&proof.0, &proof.1, security_bits)
+}
+
+pub fn proof_size_v2<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy>(
+    proof: &(
+        Vec<Val>,
+        Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+    ),
+) -> usize {
+    keccak::proof_size_v2(&proof.0, &proof.1)
+}
+
+pub fn proof_size_v1<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy>(
+    proof: &(
+        Vec<Val>,
+        Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+    ),
+) -> usize {
+    keccak::proof_size_v1(&proof.0, &proof.1)
 }

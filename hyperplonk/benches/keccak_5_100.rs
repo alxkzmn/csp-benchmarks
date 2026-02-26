@@ -20,5 +20,5 @@ utils::define_benchmark_harness!(
     |prepared| prove_keccak(prepared).expect("failed to generate keccak proof"),
     |prepared, proof| verify_keccak(prepared, proof).expect("verification failed"),
     preprocessing_size,
-    proof_size
+    |proof| proof_size(proof, SECURITY_BITS)
 );

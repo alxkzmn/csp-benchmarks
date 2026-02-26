@@ -97,7 +97,41 @@ where
     proving_system::preprocessing_size(prepared)
 }
 
-pub fn proof_size<EF>(proof_with_input: &(KeccakProof<EF>, Vec<KeccakBaseField>)) -> usize
+pub fn proof_size<EF>(
+    proof_with_input: &(KeccakProof<EF>, Vec<KeccakBaseField>),
+    security_bits: usize,
+) -> usize
+where
+    EF: ExtensionField<KeccakBaseField> + TwoAdicField + BasedVectorSpace<KeccakBaseField> + Copy,
+{
+    let proof_blob = evm_codec::encode_proof_blob_v3_generic(
+        &proof_with_input.1,
+        &proof_with_input.0,
+        evm_codec::effective_digest_bytes_for_v3_security_bits(security_bits),
+    );
+    evm_codec::encode_calldata_verify_bytes(&proof_blob).len()
+}
+
+pub fn proof_size_with_security_bits<EF>(
+    proof_with_input: &(KeccakProof<EF>, Vec<KeccakBaseField>),
+    security_bits: usize,
+) -> usize
+where
+    EF: ExtensionField<KeccakBaseField> + TwoAdicField + BasedVectorSpace<KeccakBaseField> + Copy,
+{
+    proof_size(proof_with_input, security_bits)
+}
+
+pub fn proof_size_v2<EF>(proof_with_input: &(KeccakProof<EF>, Vec<KeccakBaseField>)) -> usize
+where
+    EF: ExtensionField<KeccakBaseField> + TwoAdicField + BasedVectorSpace<KeccakBaseField> + Copy,
+{
+    let proof_blob =
+        evm_codec::encode_proof_blob_v2_generic(&proof_with_input.1, &proof_with_input.0);
+    evm_codec::encode_calldata_verify_bytes(&proof_blob).len()
+}
+
+pub fn proof_size_v1<EF>(proof_with_input: &(KeccakProof<EF>, Vec<KeccakBaseField>)) -> usize
 where
     EF: ExtensionField<KeccakBaseField> + TwoAdicField + BasedVectorSpace<KeccakBaseField> + Copy,
 {

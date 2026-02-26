@@ -55,8 +55,8 @@ pub fn make_config<E: ExtensionField<Val>>(
 ) -> HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger> {
     let dft = Dft::<Val>::default();
     let pow_bits = 20;
-    let field_hash = FieldHash::default();
-    let compress = Compress::default();
+    let field_hash = FieldHash::for_security_bits(security_bits);
+    let compress = Compress::for_security_bits(security_bits);
     let whir_params = ProtocolParameters {
         security_level: security_bits,
         pow_bits,
@@ -135,6 +135,29 @@ pub fn preprocessing_size<E: ExtensionField<Val>>(prepared: &PreparedKeccak<E>) 
 }
 
 pub fn proof_size<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy>(
+    public_values: &[Val],
+    proof: &p3_hyperplonk::Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+    security_bits: usize,
+) -> usize {
+    let public_inputs = [public_values.to_vec()];
+    let proof_blob = evm_codec::encode_proof_blob_v3_generic(
+        &public_inputs,
+        proof,
+        p3_whir::effective_digest_bytes_for_security_bits(security_bits),
+    );
+    evm_codec::encode_calldata_verify_bytes(&proof_blob).len()
+}
+
+pub fn proof_size_v2<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy>(
+    public_values: &[Val],
+    proof: &p3_hyperplonk::Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+) -> usize {
+    let public_inputs = [public_values.to_vec()];
+    let proof_blob = evm_codec::encode_proof_blob_v2_generic(&public_inputs, proof);
+    evm_codec::encode_calldata_verify_bytes(&proof_blob).len()
+}
+
+pub fn proof_size_v1<E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy>(
     public_values: &[Val],
     proof: &p3_hyperplonk::Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
 ) -> usize {
