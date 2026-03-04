@@ -5,7 +5,7 @@ use p3_field::{BasedVectorSpace, ExtensionField, TwoAdicField};
 use utils::harness::{AuditStatus, BenchProperties};
 use whirlaway_sys::AirSettings;
 use whirlaway_sys::circuits::keccak256::{
-    Binomial8Challenge, F as KeccakBaseField, Keccak256Circuit, Keccak256Input,
+    Binomial8Challenge, F as KeccakBaseField, Keccak256Circuit, Keccak256Input, KeccakMode,
 };
 use whirlaway_sys::evm_codec;
 use whirlaway_sys::hashers::{
@@ -32,6 +32,7 @@ pub fn whirlaway_bench_properties(security_bits: u64) -> BenchProperties {
 }
 
 pub type DefaultExtension = Binomial8Challenge;
+pub use whirlaway_sys::circuits::keccak256::KeccakMode as WhirlawayKeccakMode;
 
 pub type KeccakPrepared<EF> = Prepared<
     Keccak256Circuit<EF>,
@@ -44,13 +45,22 @@ pub type KeccakProof<EF> =
     proving_system::Proof<Keccak256Circuit<EF>, KeccakBaseField, EF, { KECCAK_DIGEST_ELEMS }>;
 
 pub fn default_air_settings(security_bits: usize) -> AirSettings {
-    default_air_settings_with_merkle_override(security_bits, None)
+    default_air_settings_with_overrides(security_bits, None, None)
 }
 
 pub fn default_air_settings_with_merkle_override(
     security_bits: usize,
     merkle_security_bits_override: Option<usize>,
 ) -> AirSettings {
+    default_air_settings_with_overrides(security_bits, merkle_security_bits_override, None)
+}
+
+pub fn default_air_settings_with_overrides(
+    security_bits: usize,
+    merkle_security_bits_override: Option<usize>,
+    whir_pow_bits: Option<usize>,
+) -> AirSettings {
+    let _ = whir_pow_bits;
     let mut settings = AirSettings::default();
     settings.security_bits = security_bits;
     settings.merkle_security_bits_override = merkle_security_bits_override;
@@ -85,7 +95,29 @@ pub fn prepare_keccak_with_settings<EF>(
 where
     EF: ExtensionField<KeccakBaseField> + TwoAdicField,
 {
-    let circuit = Keccak256Circuit::<EF>::new(input_size);
+    prepare_keccak_with_settings_and_mode(input_size, settings, KeccakMode::LegacyBitSponge)
+}
+
+pub fn prepare_keccak_with_mode<EF>(
+    input_size: usize,
+    security_bits: usize,
+    mode: KeccakMode,
+) -> KeccakPrepared<EF>
+where
+    EF: ExtensionField<KeccakBaseField> + TwoAdicField,
+{
+    prepare_keccak_with_settings_and_mode(input_size, default_air_settings(security_bits), mode)
+}
+
+pub fn prepare_keccak_with_settings_and_mode<EF>(
+    input_size: usize,
+    settings: AirSettings,
+    mode: KeccakMode,
+) -> KeccakPrepared<EF>
+where
+    EF: ExtensionField<KeccakBaseField> + TwoAdicField,
+{
+    let circuit = Keccak256Circuit::<EF>::new_with_mode(input_size, mode);
     let proving_settings = KeccakProvingSystemConfig::<EF>::new(settings);
     proving_system::prepare(&proving_settings, circuit)
 }

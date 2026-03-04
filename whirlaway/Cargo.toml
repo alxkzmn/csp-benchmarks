@@ -11,6 +11,12 @@ whir-p3 = { path = "../whir-p3" }
 anyhow = "1.0.81"
 clap = { version = "4.5.20", features = ["derive", "env"] }
 criterion = "0.5.1"
+bincode = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-forest = "0.3.1"
+tracing-subscriber = { workspace = true }
 utils = { path = "../utils" }
 
 whirlaway_sys = { package = "whirlaway", path = "Whirlaway/whirlaway",  features = ["keccak_no_prefix"] }
@@ -47,3 +53,7 @@ path = "src/bin/keccak_mem_whirlaway_5_100.rs"
 [[bin]]
 name = "keccak_mem_whirlaway_8"
 path = "src/bin/keccak_mem_whirlaway_8.rs"
+
+[[bin]]
+name = "keccak_profile"
+path = "src/bin/keccak_profile.rs"

@@ -24,6 +24,9 @@ fi
 # Default JSON output filename
 json_file="memory_report.json"
 
+# Default number of runs
+num_runs=10
+
 # Parse options
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -35,9 +38,21 @@ while [[ $# -gt 0 ]]; do
       json_file="$2"
       shift 2
       ;;
+    -n|--runs)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: $1 requires a positive integer" >&2
+        exit 1
+      fi
+      if ! [[ "$2" =~ ^[0-9]+$ ]] || [[ "$2" -eq 0 ]]; then
+        echo "Error: runs must be a positive integer (got '$2')" >&2
+        exit 1
+      fi
+      num_runs="$2"
+      shift 2
+      ;;
     --) shift; break ;;        # end of options
     -h|--help)
-      echo "Usage: $0 [-o output.json] -- <command> [args...]"
+      echo "Usage: $0 [-o output.json] [-n runs] -- <command> [args...]"
       exit 0
       ;;
     *)
@@ -49,18 +64,16 @@ done
 # Ensure there is a command to run
 if (( $# == 0 )); then
   echo "Error: No command specified." >&2
-  echo "Usage: $0 [-o output.json] -- <command> [args...]" >&2
+  echo "Usage: $0 [-o output.json] [-n runs] -- <command> [args...]" >&2
   exit 1
 fi
 
-# Fixed number of runs: 10
-NUM_RUNS=10
 total_bytes=0
 
-echo "Running command: $* (averaging over $NUM_RUNS runs)"
+echo "Running command: $* (averaging over $num_runs runs)"
 echo "JSON output file: $json_file"
 
-for i in $(seq 1 $NUM_RUNS); do
+for i in $(seq 1 "$num_runs"); do
   echo " Run #$i..."
   
   # Run the command and capture both program output and measurement output
@@ -90,11 +103,11 @@ for i in $(seq 1 $NUM_RUNS); do
 done
 
 # Compute average
-avg_bytes=$(( total_bytes / NUM_RUNS ))
+avg_bytes=$(( total_bytes / num_runs ))
 avg_mib=$(awk "BEGIN { printf \"%.2f\", ${avg_bytes}/1024/1024 }")
 
 echo
-echo "Average peak memory across $NUM_RUNS runs:"
+echo "Average peak memory across $num_runs runs:"
 echo "  • ${avg_bytes} Bytes"
 echo "  • ${avg_mib} MiB"
 

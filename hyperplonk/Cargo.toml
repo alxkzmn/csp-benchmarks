@@ -15,6 +15,7 @@ clap = { workspace = true }
 criterion = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 tracing = { workspace = true }
 utils = { workspace = true }
 
@@ -33,7 +34,7 @@ p3-koala-bear = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
 p3-matrix = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
 p3-symmetric = { git = "https://github.com/Plonky3/Plonky3", rev = "c38eb05" }
 
-tracing-forest = "0.1.6"
+tracing-forest = "0.3.1"
 tracing-subscriber = { version = "0.3.17", default-features = false, features = ["alloc", "std", "env-filter"] }
 
 [target.'cfg(target_family = "unix")'.dependencies]
@@ -79,3 +80,6 @@ path = "src/bin/keccak_mem_5_100.rs"
 name = "keccak_mem_hyperplonk_8"
 path = "src/bin/keccak_mem_8.rs"
 
+[[bin]]
+name = "keccak_profile"
+path = "src/bin/keccak_profile.rs"

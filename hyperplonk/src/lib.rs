@@ -7,7 +7,8 @@ use p3_koala_bear::KoalaBear;
 use utils::harness::{AuditStatus, BenchProperties};
 
 use crate::keccak::{
-    Challenger, Dft, Pcs, PreparedKeccak, make_config, make_config_with_merkle_override,
+    Challenger, Dft, KeccakWhirBenchParams, Pcs, PreparedKeccak, make_config,
+    make_config_with_merkle_override, prepare_with_params,
 };
 
 pub mod keccak;
@@ -15,10 +16,17 @@ pub mod keccak;
 /// Test-only re-exports so integration tests can access trace generation and column indices.
 #[cfg(any(test, feature = "test-utils"))]
 pub mod test_utils {
+    pub use crate::keccak::KeccakMode;
+    pub use crate::keccak::byte_sponge_air::{RATE_BYTES, RATE_U16S};
+    pub use crate::keccak::byte_trace::generate_byte_traces_and_public_digest_limbs;
+    pub use crate::keccak::prepare_with_mode;
     pub use crate::keccak::sponge_air::{
         BLOCK_BITS_START, DIGEST_LIMBS, OUT_BITS_START, RATE_BITS, STATE_BITS,
     };
     pub use crate::keccak::trace::generate_trace_and_public_digest_limbs;
+    pub use crate::keccak::xor_lookup_air::{
+        XOR_LOOKUP_COLS, XOR_LOOKUP_MULT_IDX, XOR_LOOKUP_Z_IDX,
+    };
 }
 
 type Val = KoalaBear;
@@ -46,6 +54,13 @@ pub fn prepare_keccak<E: ExtensionField<Val>>(
 ) -> Result<keccak::PreparedKeccak<E>> {
     let config = make_config::<E>(security_bits);
     keccak::prepare(input_size, config)
+}
+
+pub fn prepare_keccak_with_params<E: ExtensionField<Val>>(
+    input_size: usize,
+    params: &KeccakWhirBenchParams,
+) -> Result<keccak::PreparedKeccak<E>> {
+    prepare_with_params(input_size, params)
 }
 
 pub fn prepare_keccak_with_merkle_override<E: ExtensionField<Val>>(
@@ -106,6 +121,23 @@ pub fn proof_size_with_merkle_override<
         &proof.1,
         security_bits,
         merkle_security_bits_override,
+    )
+}
+
+pub fn proof_size_with_params<
+    E: ExtensionField<Val> + TwoAdicField + BasedVectorSpace<Val> + Copy,
+>(
+    proof: &(
+        Vec<Val>,
+        Proof<HyperPlonkConfig<Pcs<Val, Dft<Val>>, E, Challenger>>,
+    ),
+    params: &KeccakWhirBenchParams,
+) -> usize {
+    keccak::proof_size_with_merkle_override(
+        &proof.0,
+        &proof.1,
+        params.security_bits,
+        params.merkle_security_bits_override,
     )
 }
 

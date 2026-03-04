@@ -7,6 +7,11 @@ This file is a pointer; see `.github/copilot-instructions.md` for the canonical,
 - Focus only on **WHIR-based** proving systems: `hyperplonk` and `whirlaway`.
 - Use **ProveKit** as the baseline comparator.
 - Optimize for the **smallest on-chain verifier** (proof/calldata size + verifier complexity) while preserving **client-side feasibility** (proving time and RAM).
+- **Before any proof-size optimization work on `hyperplonk` or `whirlaway`**, read the relevant proof-size reference:
+  - **HyperPlonk**: `hyperplonk/p3-playground/docs/PROOF_SIZE_REFERENCE.md` — full proof-size breakdown, measured baselines, levers ranked by ROI, acceptance gates, and formulas for predicting savings.
+  - **Whirlaway (source of truth, mandatory pre-read)**: `whirlaway/Whirlaway/docs/PROOF_SIZE_ANALYSIS.md`.
+    - This document must be read **before** starting implementation, review, or impact assessment for any change that can affect proof size (AIR width, witness/preprocessed columns, WHIR params, transcript/proof encoding, calldata size).
+    - If another whirlaway proof-size document conflicts, `PROOF_SIZE_ANALYSIS.md` takes precedence unless explicitly superseded.
 
 ## Golden rules
 
