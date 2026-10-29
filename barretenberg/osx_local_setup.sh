@@ -78,6 +78,7 @@ bbup -v 5.2.1
 # -----------------------
 # Run demo prover & verifier
 # -----------------------
-bash ../benchmark.sh --system-dir "${SCRIPT_DIR}"
+cd "$SCRIPT_DIR"
+cargo bench
 
 ok "All done!"

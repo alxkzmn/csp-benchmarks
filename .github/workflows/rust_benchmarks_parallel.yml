@@ -332,6 +332,16 @@ jobs:
         with:
           version: ${{ matrix.crate == 'provekit' && '1.0.0-beta.26' || '1.0.0-beta.19' }}
 
+      - name: Install Nargo for Barretenberg
+        if: ${{ matrix.crate == 'barretenberg' }}
+        uses: ./.github/actions/install-nargo
+        with:
+          version: "1.0.0-beta.25"
+
+      - name: Install Barretenberg
+        if: ${{ matrix.crate == 'barretenberg' }}
+        uses: ./.github/actions/install-bb
+
       - name: Install OpenMPI for polyhedra-expander
         if: ${{ contains(matrix.crate, 'polyhedra-expander') }}
         uses: ./.github/actions/install-ompi
@@ -441,6 +451,12 @@ jobs:
         env:
           BENCH_INPUT_PROFILE: reduced
         run: cargo test --release -p spartan-whir-bench --lib -- --include-ignored --test-threads=1
+
+      - name: Validate Barretenberg circuit integration
+        if: ${{ matrix.crate == 'barretenberg' }}
+        env:
+          BENCH_INPUT_PROFILE: ${{ github.event_name == 'pull_request' && 'reduced' || 'full' }}
+        run: cargo test --release -p barretenberg-bench --test integration -- --ignored --test-threads=1
 
       - name: Run benches in ${{ matrix.crate }}
         run: |
