@@ -272,8 +272,7 @@ fn input_sizes_for(target: BenchTarget, system: ProvingSystem) -> Vec<usize> {
 }
 
 fn supports_input_size(target: BenchTarget, system: ProvingSystem, size: usize) -> bool {
-    // Barretenberg's native BLAKE3 black box supports one chunk only.
-    // Do not substitute independent chunk hashes for a full BLAKE3 tree.
+    // Barretenberg's native BLAKE3 black box supports inputs up to one 1024-byte chunk.
     !matches!(
         (system, target),
         (ProvingSystem::Barretenberg, BenchTarget::Blake3)

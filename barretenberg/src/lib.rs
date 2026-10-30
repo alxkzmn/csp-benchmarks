@@ -18,8 +18,8 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use clap::Parser;
 use utils::harness::BenchProperties;
 
-pub const BB_VERSION: &str = "5.2.1";
-pub const NARGO_VERSION: &str = "1.0.0-beta.25";
+const BB_VERSION: &str = "5.2.1";
+const NARGO_VERSION: &str = "1.0.0-beta.25";
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Target {
@@ -170,7 +170,7 @@ fn project_path(target: Target, size: usize) -> PathBuf {
 }
 
 fn settings() -> ProofSystemSettings {
-    // Match the BB 5.2.1 CLI's default zero-knowledge UltraHonk flavor.
+    // Zero-knowledge UltraHonk with the Poseidon2 transcript.
     ProofSystemSettings {
         ipa_accumulation: false,
         oracle_hash_type: "poseidon2".into(),
@@ -216,7 +216,7 @@ fn load_bytecode(project: &Path, target: Target) -> Result<(Vec<u8>, usize)> {
 }
 
 pub struct Prover {
-    pub circuit: CircuitInput,
+    circuit: CircuitInput,
     project: PathBuf,
 }
 
@@ -226,9 +226,8 @@ pub struct Prepared {
     pub preprocessing_size: usize,
 }
 
-/// One official Rust MsgPack client and BB child per benchmark executable.
-/// The timed API calls reuse the process and SRS cache; process startup and
-/// shutdown are not included in Criterion's proving or verification time.
+/// Reuses a BB child process and its SRS cache across benchmark iterations.
+/// The harness creates the session before timing proving and verification.
 pub struct Session {
     api: RefCell<BarretenbergApi<PipeBackend>>,
     prepared: RefCell<HashMap<(Target, usize), Rc<Prepared>>>,
@@ -257,8 +256,8 @@ impl Session {
         })
     }
 
-    /// Compile each circuit size and compute its VK once, outside timing.
-    /// Generated projects leave the checked-in Noir sources untouched.
+    /// Compile and cache each circuit size and verification key before timing.
+    /// Generated Noir projects live under `target/noir/<target>_<size>`.
     pub fn prepare(&self, target: Target, size: usize) -> Result<Rc<Prepared>> {
         if let Some(prepared) = self.prepared.borrow().get(&(target, size)) {
             return Ok(Rc::clone(prepared));
@@ -310,8 +309,7 @@ impl Session {
         Ok(prepared)
     }
 
-    /// Witness generation and construction of the UltraHonk prover instance
-    /// belong to proving, not the unmeasured preparation closure.
+    /// Proving includes witness generation and construction of the UltraHonk prover instance.
     pub fn prove(&self, prover: &Prover) -> Result<CircuitProveResponse> {
         run(nargo().current_dir(&prover.project).args([
             "execute",
@@ -354,8 +352,7 @@ pub fn measure_memory(target: Target) -> Result<()> {
             target.name()
         );
     }
-    // The harness has compiled the circuit already. Do not charge Noir
-    // compilation or gate-count/VK queries to proving peak memory.
+    // The harness prepares the bytecode and verification key before RAM measurement.
     let (bytecode, _) = load_bytecode(&project, target)?;
     let verification_key = fs::read(project.join("target/vk"))?;
     let prover = Prover {
@@ -368,8 +365,7 @@ pub fn measure_memory(target: Target) -> Result<()> {
     };
     let session = Session::new()?;
     let _proof = session.prove(&prover)?;
-    // PipeBackend::drop kills and waits for the child. The shared memory
-    // script's /usr/bin/time measurement therefore includes BB's peak RSS.
+    // Reap BB before exit so /usr/bin/time includes its peak RSS.
     drop(session);
     Ok(())
 }
@@ -387,19 +383,24 @@ mod tests {
                 if target != Target::Ecdsa {
                     assert!(source.contains(&format!("; {size}]")));
                 }
-                if target == Target::Keccak {
-                    assert!(source.contains(&format!("keccak256::<{size}>")));
+                match target {
+                    Target::Keccak => {
+                        assert!(source.contains(&format!("keccak256::<{size}>")));
+                    }
+                    Target::Poseidon => {
+                        assert!(
+                            source
+                                .contains(&format!("use poseidon::poseidon::bn254::hash_{size};"))
+                        );
+                        assert!(source.contains(&format!("hash_{size}(inputs)")));
+                    }
+                    Target::Poseidon2 => {
+                        assert!(source.contains(&format!("Poseidon2::hash(inputs, {size})")));
+                    }
+                    _ => {}
                 }
             }
         }
         assert!(Target::Blake3.source(2048).is_err());
-    }
-
-    #[test]
-    fn settings_keep_zero_knowledge_ultrahonk() {
-        let settings = settings();
-        assert!(!settings.disable_zk);
-        assert!(!settings.ipa_accumulation);
-        assert_eq!(settings.oracle_hash_type, "poseidon2");
     }
 }

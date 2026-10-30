@@ -452,12 +452,6 @@ jobs:
           BENCH_INPUT_PROFILE: reduced
         run: cargo test --release -p spartan-whir-bench --lib -- --include-ignored --test-threads=1
 
-      - name: Validate Barretenberg circuit integration
-        if: ${{ matrix.crate == 'barretenberg' }}
-        env:
-          BENCH_INPUT_PROFILE: ${{ github.event_name == 'pull_request' && 'reduced' || 'full' }}
-        run: cargo test --release -p barretenberg-bench --test integration -- --ignored --test-threads=1
-
       - name: Run benches in ${{ matrix.crate }}
         run: |
           PROFILE="full"

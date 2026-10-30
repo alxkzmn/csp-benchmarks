@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = { workspace = true }
-# Use the release-matched generated API, without the default static FFI backend.
+# Pin the PipeBackend API to the installed BB version.
 barretenberg-rs = { version = "=5.2.1", default-features = false, features = ["native"] }
 base64 = "0.22"
 clap = { workspace = true }
